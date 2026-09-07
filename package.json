@@ -1,0 +1,34 @@
+{
+  "name": "swashop",
+  "version": "1.0.0",
+  "description": "SwaShop - Smart Market Linkage Platform for Artisans, Local Shops & MSMEs",
+  "private": true,
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspace=server && npm install --workspace=client",
+    "dev": "concurrently -k -n \"SERVER,CLIENT\" -c \"blue,magenta\" \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
+    "dev:server": "npm run dev --workspace=server",
+    "dev:client": "npm run dev --workspace=client",
+    "start": "npm run start --workspace=server",
+    "build": "npm run build --workspace=client",
+    "seed": "npm run seed --workspace=server",
+    "seed:admin": "npm run seed:admin --workspace=server",
+    "test": "npm run test --workspace=server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "keywords": [
+    "swashop",
+    "marketplace",
+    "artisans",
+    "msme",
+    "local-commerce",
+    "reseller"
+  ],
+  "author": "SwaShop Team",
+  "license": "ISC"
+}
