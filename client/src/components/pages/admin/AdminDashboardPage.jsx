@@ -13,7 +13,11 @@ import {
   Repeat,
   ArrowRight,
   ShieldCheck,
-  UserPlus
+  UserPlus,
+  Sparkles,
+  Activity,
+  Clock,
+  Cpu
 } from 'lucide-react';
 import axiosClient from '../../api/axiosClient.js';
 import { useToast } from '../../context/ToastContext.jsx';
@@ -22,17 +26,25 @@ const AdminDashboardPage = () => {
   const [stats, setStats] = useState(null);
   const [recentPendingSellers, setRecentPendingSellers] = useState([]);
   const [recentProducts, setRecentProducts] = useState([]);
+  const [aiStats, setAiStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
 
   const fetchAdminDashboard = async () => {
     setIsLoading(true);
     try {
-      const res = await axiosClient.get('/admin/dashboard');
-      if (res.success) {
-        setStats(res.stats);
-        setRecentPendingSellers(res.recentPendingSellers || []);
-        setRecentProducts(res.recentProducts || []);
+      const [dashRes, aiRes] = await Promise.all([
+        axiosClient.get('/admin/dashboard'),
+        axiosClient.get('/ai/usage').catch(() => ({ success: false }))
+      ]);
+
+      if (dashRes.success) {
+        setStats(dashRes.stats);
+        setRecentPendingSellers(dashRes.recentPendingSellers || []);
+        setRecentProducts(dashRes.recentProducts || []);
+      }
+      if (aiRes.success && aiRes.stats) {
+        setAiStats(aiRes.stats);
       }
     } catch (err) {
       console.error('Failed to load admin metrics:', err);
@@ -48,7 +60,10 @@ const AdminDashboardPage = () => {
 
   const handleVerifySeller = async (id, status) => {
     try {
-      const res = await axiosClient.patch(`/admin/sellers/${id}/verification`, { status });
+      const res = await axiosClient.patch(`/admin/sellers/${id}/verification`, {
+        status,
+        reviewNotes: `Reviewed and marked ${status} by administrator console`
+      });
       showToast(res.message, 'success');
       fetchAdminDashboard();
     } catch (err) {
@@ -192,15 +207,24 @@ const AdminDashboardPage = () => {
                   <p className="text-xs text-slate-500 mt-0.5">
                     Owner: {seller.userId?.name} ({seller.userId?.email}) • {seller.city}, {seller.state}
                   </p>
+                  {seller.verificationDetails?.documentNumber && (
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/60 w-fit">
+                      <span className="font-bold">{seller.verificationDetails.documentType}:</span>
+                      <span>{seller.verificationDetails.documentNumber}</span>
+                      {seller.verificationDetails.reviewNotes && (
+                        <span className="text-slate-600 font-sans italic">— {seller.verificationDetails.reviewNotes}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleVerifySeller(seller._id, 'APPROVED')}
+                    onClick={() => handleVerifySeller(seller._id, 'VERIFIED')}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Approve Shop</span>
+                    <span>Verify & Approve</span>
                   </button>
                   <button
                     onClick={() => handleVerifySeller(seller._id, 'REJECTED')}
@@ -220,6 +244,102 @@ const AdminDashboardPage = () => {
           </div>
         )}
       </div>
+
+      {/* Phase 2: AI Seller Intelligence Telemetry & Audit Section */}
+      {aiStats && (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-purple-600" />
+                  Phase 2 AI Telemetry
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
+                  {aiStats.successRate}% Success Rate
+                </span>
+              </div>
+              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                Seller AI Platform Operations & Usage Audit
+              </h2>
+              <p className="text-xs text-slate-500">
+                Live monitoring of Gemini 2.5 Flash, Cloudinary AI Transformations, and Local Fallback Engines.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Total AI Requests</p>
+                <p className="text-2xl font-black text-purple-700">{aiStats.totalCalls}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Successful / Failed</p>
+                <p className="text-sm font-extrabold text-slate-700">
+                  <span className="text-emerald-600">{aiStats.successfulCalls}</span> /{' '}
+                  <span className="text-rose-600">{aiStats.failedCalls}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature Breakdown Badges */}
+          {aiStats.featureBreakdown && aiStats.featureBreakdown.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Features Breakdown:</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {aiStats.featureBreakdown.map((feat) => (
+                  <div key={feat._id} className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-center">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{feat._id}</p>
+                    <p className="text-lg font-black text-slate-800">{feat.count}</p>
+                    <p className="text-[10px] text-slate-400">{Math.round(feat.avgDuration || 0)}ms avg</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recent AI Invocation Logs */}
+          {aiStats.recentLogs && aiStats.recentLogs.length > 0 && (
+            <div className="space-y-2 pt-2">
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Recent AI Operations Log:</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3">Feature</th>
+                      <th className="py-2.5 px-3">User</th>
+                      <th className="py-2.5 px-3">Provider / Model</th>
+                      <th className="py-2.5 px-3">Latency</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3">Summary</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {aiStats.recentLogs.slice(0, 8).map((log) => (
+                      <tr key={log._id} className="hover:bg-slate-50/50 transition">
+                        <td className="py-2.5 px-3 font-bold text-purple-700">{log.feature}</td>
+                        <td className="py-2.5 px-3 font-medium text-slate-700">{log.userId?.name || 'Seller'}</td>
+                        <td className="py-2.5 px-3 text-slate-500 font-mono text-[11px]">{log.provider} ({log.model})</td>
+                        <td className="py-2.5 px-3 text-slate-600 font-medium">{log.durationMs}ms</td>
+                        <td className="py-2.5 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                              log.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                            }`}
+                          >
+                            {log.status}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-500 truncate max-w-xs">{log.inputSummary || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Admin Quick Navigation Hub */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

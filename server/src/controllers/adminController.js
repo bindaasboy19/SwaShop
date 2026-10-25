@@ -25,7 +25,7 @@ export const getDashboardStats = async (req, res, next) => {
       User.countDocuments(),
       User.countDocuments({ role: 'CUSTOMER' }),
       User.countDocuments({ role: 'SELLER' }),
-      SellerProfile.countDocuments({ verificationStatus: 'APPROVED', isOpen: true }),
+      SellerProfile.countDocuments({ verificationStatus: { $in: ['APPROVED', 'VERIFIED'] }, isOpen: true }),
       SellerProfile.countDocuments({ verificationStatus: 'PENDING' }),
       Product.countDocuments(),
       Product.countDocuments({ isPublished: true, isActive: true }),
@@ -179,13 +179,13 @@ export const getSellers = async (req, res, next) => {
   }
 };
 
-// @desc    Update seller verification status (APPROVE, REJECT, SUSPEND, PENDING)
+// @desc    Update seller verification status (APPROVE, VERIFIED, REJECT, SUSPEND, PENDING)
 // @route   PATCH /api/admin/sellers/:id/verification
 // @access  Private (Admin only)
 export const updateSellerVerification = async (req, res, next) => {
   try {
-    const { status } = req.body;
-    const allowed = ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'];
+    const { status, reviewNotes, rejectionReason } = req.body;
+    const allowed = ['PENDING', 'APPROVED', 'VERIFIED', 'REJECTED', 'SUSPENDED'];
 
     if (!allowed.includes(status)) {
       return res.status(400).json({
@@ -203,6 +203,21 @@ export const updateSellerVerification = async (req, res, next) => {
     }
 
     seller.verificationStatus = status;
+
+    if (!seller.verificationDetails) {
+      seller.verificationDetails = {};
+    }
+
+    seller.verificationDetails.reviewedBy = req.user._id;
+    if (reviewNotes) seller.verificationDetails.reviewNotes = reviewNotes;
+
+    if (status === 'APPROVED' || status === 'VERIFIED') {
+      seller.verificationDetails.verifiedAt = new Date();
+    } else if (status === 'REJECTED') {
+      seller.verificationDetails.rejectedAt = new Date();
+      if (rejectionReason) seller.verificationDetails.rejectionReason = rejectionReason;
+    }
+
     await seller.save();
 
     res.json({

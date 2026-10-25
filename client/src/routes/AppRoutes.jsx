@@ -16,6 +16,11 @@ import SavedItemsPage from '../components/pages/customer/SavedItemsPage.jsx';
 import CustomerEnquiriesPage from '../components/pages/customer/CustomerEnquiriesPage.jsx';
 import CustomerProfilePage from '../components/pages/customer/CustomerProfilePage.jsx';
 
+// B2B Market Linkage Pages
+import B2BHubPage from '../components/pages/b2b/B2BHubPage.jsx';
+import PostRequirementPage from '../components/pages/b2b/PostRequirementPage.jsx';
+import RequirementDetailPage from '../components/pages/b2b/RequirementDetailPage.jsx';
+
 // Seller Pages
 import SellerOnboardingPage from '../components/pages/seller/SellerOnboardingPage.jsx';
 import SellerDashboardPage from '../components/pages/seller/SellerDashboardPage.jsx';
@@ -25,6 +30,8 @@ import EditProductPage from '../components/pages/seller/EditProductPage.jsx';
 import SellerResellingPage from '../components/pages/seller/SellerResellingPage.jsx';
 import SellerEnquiriesPage from '../components/pages/seller/SellerEnquiriesPage.jsx';
 import SellerSettingsPage from '../components/pages/seller/SellerSettingsPage.jsx';
+import SellerAIStudioPage from '../components/pages/seller/SellerAIStudioPage.jsx';
+
 
 // Admin Pages
 import AdminDashboardPage from '../components/pages/admin/AdminDashboardPage.jsx';
@@ -62,6 +69,12 @@ const AppRoutes = () => {
       <Route path="/sellers/:id" element={<SellerDetailPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+
+      {/* B2B Market Linkage Routes */}
+      <Route path="/b2b" element={<B2BHubPage />} />
+      <Route path="/b2b/requirements/new" element={<PostRequirementPage />} />
+      <Route path="/b2b/post" element={<PostRequirementPage />} />
+      <Route path="/b2b/requirements/:id" element={<RequirementDetailPage />} />
 
       {/* Customer Routes (Inherited by SELLER as well) */}
       <Route
@@ -137,6 +150,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['SELLER']}>
             <SellerDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/seller/ai-studio"
+        element={
+          <ProtectedRoute allowedRoles={['SELLER']}>
+            <SellerAIStudioPage />
           </ProtectedRoute>
         }
       />

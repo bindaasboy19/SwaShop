@@ -39,3 +39,20 @@ export const upload = multer({
     fileSize: 5 * 1024 * 1024 // 5 MB
   }
 });
+
+const audioFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('audio/') || file.mimetype === 'video/webm' || file.mimetype === 'application/octet-stream') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only audio files are supported'), false);
+  }
+};
+
+export const audioUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: audioFilter,
+  limits: {
+    fileSize: 15 * 1024 * 1024 // 15 MB
+  }
+});
+

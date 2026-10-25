@@ -39,6 +39,31 @@ const userSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true
+    },
+    buyerProfile: {
+      enabled: { type: Boolean, default: false },
+      businessName: { type: String, trim: true, default: '' },
+      businessType: {
+        type: String,
+        enum: ['RETAILER', 'CORPORATE', 'WHOLESALER', 'INSTITUTIONAL', 'OTHER', ''],
+        default: ''
+      },
+      industry: { type: String, trim: true, default: '' },
+      location: {
+        city: { type: String, default: '' },
+        state: { type: String, default: '' },
+        country: { type: String, default: 'India' },
+        coordinates: {
+          lat: { type: Number, default: 0 },
+          lng: { type: Number, default: 0 }
+        }
+      },
+      gstNumber: { type: String, trim: true, default: '' },
+      verificationStatus: {
+        type: String,
+        enum: ['UNVERIFIED', 'PENDING', 'VERIFIED'],
+        default: 'UNVERIFIED'
+      }
     }
   },
   {

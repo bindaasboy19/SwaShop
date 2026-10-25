@@ -159,7 +159,7 @@ export const getSellerById = async (req, res, next) => {
 export const listSellers = async (req, res, next) => {
   try {
     const { sellerType, city, search, lat, lng } = req.query;
-    const query = { verificationStatus: 'APPROVED' };
+    const query = { verificationStatus: { $in: ['APPROVED', 'VERIFIED'] } };
 
     if (sellerType) {
       query.sellerType = sellerType;
@@ -208,6 +208,67 @@ export const listSellers = async (req, res, next) => {
       success: true,
       count: sellers.length,
       sellers
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Seller requests verification badge
+// @route   POST /api/sellers/verification/request
+// @access  Private (Seller only)
+export const requestVerification = async (req, res, next) => {
+  try {
+    const { documentType, documentNumber, reviewNotes, documentUrl } = req.body;
+
+    const seller = await SellerProfile.findOne({ userId: req.user._id });
+    if (!seller) {
+      return res.status(404).json({ success: false, message: 'Seller profile not found.' });
+    }
+
+    seller.verificationStatus = 'PENDING';
+    seller.verificationDetails = {
+      requestedAt: new Date(),
+      verifiedAt: null,
+      reviewedBy: null,
+      reviewNotes: reviewNotes || '',
+      documentType: documentType || 'UDYAM',
+      documentNumber: documentNumber || '',
+      documentUrl: documentUrl || ''
+    };
+
+    await seller.save();
+
+    res.json({
+      success: true,
+      message: 'Verification request submitted successfully. Our team will review your details.',
+      verificationStatus: seller.verificationStatus,
+      requestedAt: seller.verificationDetails.requestedAt
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Get current seller's verification status & timeline
+// @route   GET /api/sellers/verification/status
+// @access  Private (Seller only)
+export const getVerificationStatus = async (req, res, next) => {
+  try {
+    const seller = await SellerProfile.findOne({ userId: req.user._id });
+    if (!seller) {
+      return res.status(404).json({ success: false, message: 'Seller profile not found.' });
+    }
+
+    res.json({
+      success: true,
+      verificationStatus: seller.verificationStatus,
+      verificationDetails: {
+        requestedAt: seller.verificationDetails?.requestedAt,
+        verifiedAt: seller.verificationDetails?.verifiedAt,
+        documentType: seller.verificationDetails?.documentType,
+        reviewNotes: seller.verificationDetails?.reviewNotes
+      }
     });
   } catch (err) {
     next(err);

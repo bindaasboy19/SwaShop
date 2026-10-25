@@ -82,8 +82,31 @@ const sellerProfileSchema = new mongoose.Schema(
     },
     verificationStatus: {
       type: String,
-      enum: ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'],
+      enum: ['UNVERIFIED', 'PENDING', 'APPROVED', 'VERIFIED', 'REJECTED', 'SUSPENDED'],
       default: 'PENDING'
+    },
+    verificationDetails: {
+      requestedAt: { type: Date, default: null },
+      verifiedAt: { type: Date, default: null },
+      reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      reviewNotes: { type: String, default: '' },
+      documentType: {
+        type: String,
+        enum: ['GSTIN', 'UDYAM', 'TRADE_LICENSE', 'ARTISAN_CARD', 'AADHAAR', 'OTHER', ''],
+        default: ''
+      },
+      documentNumber: { type: String, default: '', select: false },
+      documentUrl: { type: String, default: '', select: false } // Protected document
+    },
+    b2bProfile: {
+      enabled: { type: Boolean, default: false },
+      productionCapacity: { type: Number, default: 0 }, // units per month
+      minimumOrderQuantity: { type: Number, default: 1 },
+      bulkAvailable: { type: Boolean, default: false },
+      leadTimeDays: { type: Number, default: 7 },
+      businessCategories: { type: [String], default: [] },
+      serviceLocations: { type: [String], default: [] },
+      catalogSummary: { type: String, default: '' }
     },
     isOpen: {
       type: Boolean,

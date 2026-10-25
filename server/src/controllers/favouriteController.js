@@ -24,6 +24,7 @@ export const toggleProductFavourite = async (req, res, next) => {
 
     if (existing) {
       await Favourite.findByIdAndDelete(existing._id);
+      await Product.findByIdAndUpdate(productId, { $inc: { favouriteCount: -1 } });
       return res.json({
         success: true,
         saved: false,
@@ -36,6 +37,7 @@ export const toggleProductFavourite = async (req, res, next) => {
         targetId: productId,
         targetModel: 'Product'
       });
+      await Product.findByIdAndUpdate(productId, { $inc: { favouriteCount: 1 } });
       return res.json({
         success: true,
         saved: true,
@@ -117,7 +119,7 @@ export const getMyFavourites = async (req, res, next) => {
 
     const savedSellers = await SellerProfile.find({
       _id: { $in: sellerIds },
-      verificationStatus: 'APPROVED'
+      verificationStatus: { $in: ['APPROVED', 'VERIFIED', 'PENDING'] }
     });
 
     res.json({

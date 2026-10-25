@@ -112,6 +112,38 @@ const CustomerProfilePage = () => {
           </div>
         </form>
       </div>
+
+      {/* B2B Institutional Buyer Profile Card */}
+      <div className="bg-gradient-to-r from-indigo-900 to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-lg space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-800/80 pb-4">
+          <div>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-300 block">
+              B2B Market Linkage
+            </span>
+            <h2 className="text-xl font-bold">Institutional / Bulk Procurement</h2>
+            <p className="text-xs text-indigo-200 mt-0.5">
+              Source bulk regional handicrafts, corporate gifts, and artisan supplies directly from verified makers
+            </p>
+          </div>
+          <a
+            href="/b2b"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-xs transition shrink-0 self-start sm:self-auto"
+          >
+            Open B2B Procurement Hub →
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs">
+          <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 space-y-1">
+            <span className="font-bold text-white block">Post Custom RFPs</span>
+            <span className="text-indigo-200">Submit requests for custom quantities, corporate branding, or bespoke artisan craft lines.</span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 space-y-1">
+            <span className="font-bold text-white block">Intelligent Matching Engine</span>
+            <span className="text-indigo-200">Automatically discover verified sellers and regional workshops equipped to fulfill your bulk orders.</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

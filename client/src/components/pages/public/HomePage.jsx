@@ -76,13 +76,13 @@ const HomePage = () => {
       <section className="relative overflow-hidden bg-gradient-to-b from-amber-50/60 via-slate-50 to-white pt-6 pb-12 sm:pb-16 border-b border-slate-200/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Branded Official Website-Header Asset Integration */}
-          <div className="mb-8 rounded-3xl overflow-hidden shadow-lg border border-amber-100 bg-white">
+          {/* <div className="mb-8 rounded-3xl overflow-hidden shadow-lg border border-amber-100 bg-white">
             <img
               src={headerBannerImg}
               alt="SwaShop — Smart Market Linkage Platform"
               className="w-full h-auto object-cover max-h-[340px]"
             />
-          </div>
+          </div> */}
 
           {/* Hero Content & Discovery Bar */}
           <div className="text-center max-w-3xl mx-auto space-y-4">

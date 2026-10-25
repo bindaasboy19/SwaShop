@@ -13,6 +13,9 @@ import enquiryRoutes from './routes/enquiryRoutes.js';
 import favouriteRoutes from './routes/favouriteRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
+import b2bRoutes from './routes/b2bRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,7 +40,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     app: 'SwaShop API',
-    phase: 'Phase 1',
+    phase: 'Phase 3 - Smart Market Linkage Engine',
     timestamp: new Date().toISOString()
   });
 });
@@ -53,6 +56,10 @@ app.use('/api/enquiries', enquiryRoutes);
 app.use('/api/favourites', favouriteRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/b2b', b2bRoutes);
+app.use('/api/analytics', analyticsRoutes);
+
 
 // Error Handling
 app.use(notFoundHandler);

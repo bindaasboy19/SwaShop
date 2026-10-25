@@ -14,7 +14,8 @@ import {
   Sparkles,
   ShoppingBag,
   PlusCircle,
-  Repeat
+  Repeat,
+  Briefcase
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useLocation } from '../../context/LocationContext.jsx';
@@ -53,6 +54,11 @@ const Navbar = () => {
                 Seller Mode Active: You have full access to both Buyer Marketplace & Seller Shop!
               </span>
               <div className="flex items-center gap-3">
+                <Link to="/seller/ai-studio" className="underline hover:text-amber-100 font-semibold flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
+                  AI Studio
+                </Link>
+                <span className="opacity-50">|</span>
                 <Link to="/seller" className="underline hover:text-amber-100 font-semibold">
                   Go to Shop Dashboard →
                 </Link>
@@ -127,6 +133,15 @@ const Navbar = () => {
                 <MapPin className="w-3.5 h-3.5 text-brand-600" />
                 Nearby
               </Link>
+              <Link
+                to="/b2b"
+                className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                  isActive('/b2b') ? 'text-indigo-600 bg-indigo-50 font-semibold' : 'text-slate-700 hover:text-indigo-600'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+                <span>B2B Bulk</span>
+              </Link>
 
               {/* Customer Specific (also visible to Seller) */}
               {isAuthenticated && (
@@ -154,13 +169,22 @@ const Navbar = () => {
 
               {/* Seller Quick Links */}
               {isSeller && (
-                <Link
-                  to="/seller"
-                  className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold transition flex items-center gap-1.5 border border-amber-200"
-                >
-                  <Store className="w-4 h-4 text-amber-600" />
-                  My Shop
-                </Link>
+                <>
+                  <Link
+                    to="/seller/ai-studio"
+                    className="px-3 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 font-semibold transition flex items-center gap-1.5 border border-purple-200"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600 animate-pulse" />
+                    AI Studio
+                  </Link>
+                  <Link
+                    to="/seller"
+                    className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold transition flex items-center gap-1.5 border border-amber-200"
+                  >
+                    <Store className="w-4 h-4 text-amber-600" />
+                    My Shop
+                  </Link>
+                </>
               )}
 
               {/* Admin Console Link */}
@@ -212,6 +236,10 @@ const Navbar = () => {
                       {/* Role-based navigation inside menu */}
                       {isSeller ? (
                         <>
+                          <Link to="/seller/ai-studio" className="flex items-center gap-2.5 px-4 py-2 text-purple-700 bg-purple-50/70 hover:bg-purple-100 font-semibold rounded-lg mx-2 my-0.5">
+                            <Sparkles className="w-4 h-4 text-purple-600" />
+                            Seller AI Studio
+                          </Link>
                           <Link to="/seller" className="flex items-center gap-2.5 px-4 py-2 text-slate-700 hover:bg-amber-50 hover:text-amber-900 font-medium">
                             <Store className="w-4 h-4 text-amber-600" />
                             Seller Dashboard
@@ -335,16 +363,24 @@ const Navbar = () => {
               <Link to="/explore?nearby=true" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-slate-50">
                 Nearby Artisans & Shops
               </Link>
+              <Link to="/b2b" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 font-semibold flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-indigo-600" />
+                <span>B2B Market Linkage & Bulk</span>
+              </Link>
 
               {isSeller && (
                 <>
                   <div className="border-t border-slate-100 my-1"></div>
                   <p className="text-xs font-bold uppercase text-amber-700 px-3 py-1">Seller Features</p>
-                  <Link to="/seller" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg bg-amber-50 text-amber-900 font-semibold">
+                  <Link to="/seller/ai-studio" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg bg-purple-50 text-purple-700 font-semibold flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-600" />
+                    AI Studio
+                  </Link>
+                  <Link to="/seller" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-slate-50">
                     Seller Dashboard
                   </Link>
                   <Link to="/seller/products" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-slate-50">
-                    My Catalogue (Own + Resold)
+                    My Catalogue
                   </Link>
                   <Link to="/seller/products/new" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-slate-50">
                     Add Product

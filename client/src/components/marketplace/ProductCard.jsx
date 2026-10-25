@@ -52,13 +52,15 @@ const ProductCard = ({ product, onSaveToggle }) => {
     <>
       <div className="group bg-white rounded-2xl border border-slate-200/80 hover:border-brand-300 hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden relative">
         {/* Image Container */}
-        <Link to={`/products/${product._id}`} className="relative aspect-4/3 bg-slate-100 overflow-hidden block">
+        <Link to={`/products/${product._id}`} className="relative aspect-square bg-slate-100 overflow-hidden block">
           <img
             src={primaryImage}
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
+
+
 
           {/* Stock Status Badge */}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
@@ -82,11 +84,10 @@ const ProductCard = ({ product, onSaveToggle }) => {
           {/* Bookmark / Favourite Button */}
           <button
             onClick={handleToggleSave}
-            className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md shadow-xs transition z-10 ${
-              isSaved
-                ? 'bg-rose-50 text-rose-600'
-                : 'bg-white/80 text-slate-500 hover:text-rose-600 hover:bg-white'
-            }`}
+            className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md shadow-xs transition z-10 ${isSaved
+              ? 'bg-rose-50 text-rose-600'
+              : 'bg-white/80 text-slate-500 hover:text-rose-600 hover:bg-white'
+              }`}
             title={isSaved ? 'Remove from saved' : 'Save to favourites'}
           >
             <Heart className={`w-4 h-4 ${isSaved ? 'fill-rose-500 text-rose-500' : ''}`} />
@@ -137,8 +138,16 @@ const ProductCard = ({ product, onSaveToggle }) => {
               >
                 <Store className="w-3 h-3 text-slate-400 shrink-0" />
                 <span className="truncate font-medium">{product.sellerId.businessName}</span>
-                {product.sellerId.verificationStatus === 'APPROVED' && (
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                {(product.sellerId.verificationStatus === 'APPROVED' || product.sellerId.verificationStatus === 'VERIFIED') && (
+                  <span className="flex items-center gap-0.5 text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded text-[10px] font-bold" title="Verified Local Seller">
+                    <CheckCircle2 className="w-3 h-3 shrink-0" />
+                    Verified
+                  </span>
+                )}
+                {product.b2b?.enabled && (
+                  <span className="text-[10px] bg-indigo-50 text-indigo-700 font-semibold px-1.5 py-0.5 rounded" title="Bulk / B2B Available">
+                    MOQ {product.b2b.minOrderQuantity}
+                  </span>
                 )}
               </Link>
             )}

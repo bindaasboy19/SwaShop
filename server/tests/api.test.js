@@ -4,6 +4,9 @@ import http from 'node:http';
 import app from '../src/app.js';
 import { connectDB, closeDB } from '../src/config/db.js';
 
+import Category from '../src/models/Category.js';
+import { seedDatabaseCore } from '../src/seeds/seedData.js';
+
 let server;
 let baseUrl;
 
@@ -25,6 +28,10 @@ const request = async (method, path, body = null, token = null) => {
 
 test.before(async () => {
   await connectDB();
+  const catCount = await Category.countDocuments();
+  if (catCount === 0) {
+    await seedDatabaseCore({ silent: true });
+  }
   server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, resolve));
   const port = server.address().port;

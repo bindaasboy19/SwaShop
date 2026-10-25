@@ -57,8 +57,16 @@ const SellerCard = ({ seller }) => {
             <h3 className="font-bold text-slate-900 text-base group-hover:text-brand-600 transition truncate">
               {seller.businessName}
             </h3>
-            {seller.verificationStatus === 'APPROVED' && (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" title="Verified Seller" />
+            {(seller.verificationStatus === 'APPROVED' || seller.verificationStatus === 'VERIFIED') && (
+              <span className="flex items-center gap-0.5 text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-bold" title="Verified Seller">
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                Verified
+              </span>
+            )}
+            {seller.b2bProfile?.bulkAvailable && (
+              <span className="text-[10px] bg-indigo-50 text-indigo-700 font-semibold px-1.5 py-0.5 rounded" title="Bulk / B2B Supply Partner">
+                B2B Partner
+              </span>
             )}
           </div>
 

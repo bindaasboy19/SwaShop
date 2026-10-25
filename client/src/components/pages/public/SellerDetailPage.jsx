@@ -9,7 +9,9 @@ import {
   MessageSquare,
   Heart,
   Package,
-  ArrowLeft
+  ArrowLeft,
+  Briefcase,
+  ShieldCheck
 } from 'lucide-react';
 import axiosClient from '../../api/axiosClient.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -123,13 +125,29 @@ const SellerDetailPage = () => {
                   <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
                     {seller.businessName}
                   </h1>
-                  {seller.verificationStatus === 'APPROVED' && (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" title="Verified Seller" />
+                  {(seller.verificationStatus === 'APPROVED' || seller.verificationStatus === 'VERIFIED') && (
+                    <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full text-xs font-bold border border-emerald-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      Verified Maker
+                    </span>
+                  )}
+                  {seller.b2bProfile?.bulkAvailable && (
+                    <span className="flex items-center gap-1 text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full text-xs font-bold border border-indigo-200">
+                      <Briefcase className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                      B2B Supplier
+                    </span>
                   )}
                 </div>
-                <span className="inline-block mt-1 px-3 py-0.5 rounded-full bg-amber-50 text-amber-800 text-xs font-bold uppercase tracking-wider">
-                  {seller.sellerType.replace('_', ' ')}
-                </span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="inline-block px-3 py-0.5 rounded-full bg-amber-50 text-amber-800 text-xs font-bold uppercase tracking-wider">
+                    {seller.sellerType.replace('_', ' ')}
+                  </span>
+                  {seller.b2bProfile?.minimumOrderQuantity && (
+                    <span className="text-xs text-slate-500 font-medium">
+                      MOQ: {seller.b2bProfile.minimumOrderQuantity} units
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -177,6 +195,35 @@ const SellerDetailPage = () => {
             <p className="mt-4 text-sm text-slate-600 leading-relaxed max-w-3xl">
               {seller.description}
             </p>
+          )}
+
+          {/* B2B Wholesale / Bulk Supply Capacity Banner */}
+          {seller.b2bProfile?.bulkAvailable && (
+            <div className="mt-4 p-4 rounded-2xl bg-indigo-50/90 border border-indigo-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-900">
+                  <Briefcase className="w-4 h-4 text-indigo-600" />
+                  Wholesale & B2B Supply Capability
+                </span>
+                <div className="flex flex-wrap items-center gap-4 text-xs text-indigo-950 font-medium">
+                  {seller.b2bProfile.productionCapacity && (
+                    <span>Capacity: <strong>{seller.b2bProfile.productionCapacity} units/month</strong></span>
+                  )}
+                  {seller.b2bProfile.minimumOrderQuantity && (
+                    <span>MOQ: <strong>{seller.b2bProfile.minimumOrderQuantity} units</strong></span>
+                  )}
+                  {seller.b2bProfile.leadTimeDays && (
+                    <span>Lead Time: <strong>{seller.b2bProfile.leadTimeDays} days</strong></span>
+                  )}
+                </div>
+              </div>
+              <Link
+                to={`/b2b/requirements/new?category=${encodeURIComponent(seller.category || 'Handicrafts & Bamboo')}`}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition shrink-0"
+              >
+                Post Custom B2B RFP
+              </Link>
+            </div>
           )}
         </div>
       </div>

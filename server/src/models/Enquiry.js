@@ -17,6 +17,21 @@ const enquirySchema = new mongoose.Schema(
       ref: 'Product',
       default: null
     },
+    requirementId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'BuyerRequirement',
+      default: null
+    },
+    enquiryType: {
+      type: String,
+      enum: ['DIRECT', 'B2B_REQUIREMENT'],
+      default: 'DIRECT'
+    },
+    quantity: {
+      type: Number,
+      default: 1,
+      min: 1
+    },
     message: {
       type: String,
       required: [true, 'Enquiry message is required'],
@@ -35,13 +50,21 @@ const enquirySchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['PENDING', 'RESPONDED', 'CLOSED'],
+      enum: ['PENDING', 'VIEWED', 'RESPONDED', 'ACCEPTED', 'REJECTED', 'CLOSED'],
       default: 'PENDING'
     },
     responseMessage: {
       type: String,
       trim: true,
       default: ''
+    },
+    quotedPrice: {
+      type: Number,
+      default: null
+    },
+    estimatedLeadTimeDays: {
+      type: Number,
+      default: null
     }
   },
   {
@@ -51,6 +74,7 @@ const enquirySchema = new mongoose.Schema(
 
 enquirySchema.index({ customerId: 1 });
 enquirySchema.index({ sellerId: 1 });
+enquirySchema.index({ requirementId: 1 });
 enquirySchema.index({ status: 1 });
 
 const Enquiry = mongoose.model('Enquiry', enquirySchema);

@@ -26,6 +26,12 @@ export const createProduct = async (req, res, next) => {
       availability,
       stockStatus,
       tags,
+      features,
+      attributes,
+      keywords,
+      multilingual,
+      aiMetadata,
+      enhancedImages,
       isPublished
     } = req.body;
 
@@ -56,6 +62,12 @@ export const createProduct = async (req, res, next) => {
       availability: availability !== undefined ? Boolean(availability) : true,
       stockStatus: stockStatus || 'AVAILABLE',
       tags: Array.isArray(tags) ? tags : (tags ? tags.split(',').map((t) => t.trim()) : []),
+      features: Array.isArray(features) ? features : [],
+      attributes: typeof attributes === 'object' && attributes !== null ? attributes : {},
+      keywords: Array.isArray(keywords) ? keywords : (keywords ? keywords.split(',').map((k) => k.trim()) : []),
+      multilingual: multilingual || { title: { en: '', hi: '' }, description: { en: '', hi: '' } },
+      aiMetadata: aiMetadata || {},
+      enhancedImages: Array.isArray(enhancedImages) ? enhancedImages : [],
       isPublished: isPublished !== undefined ? Boolean(isPublished) : true
     });
 
@@ -95,7 +107,7 @@ export const listProducts = async (req, res, next) => {
     } = req.query;
 
     // Filter approved and active sellers first
-    const sellerFilter = { verificationStatus: 'APPROVED', isOpen: true };
+    const sellerFilter = { verificationStatus: { $in: ['APPROVED', 'VERIFIED'] }, isOpen: true };
     if (sellerType) {
       sellerFilter.sellerType = sellerType;
     }
@@ -131,10 +143,15 @@ export const listProducts = async (req, res, next) => {
     }
 
     if (search && search.trim() !== '') {
+      const sRegex = new RegExp(search.trim(), 'i');
       query.$or = [
-        { name: { $regex: search.trim(), $options: 'i' } },
-        { description: { $regex: search.trim(), $options: 'i' } },
-        { tags: { $in: [new RegExp(search.trim(), 'i')] } }
+        { name: sRegex },
+        { description: sRegex },
+        { tags: { $in: [sRegex] } },
+        { keywords: { $in: [sRegex] } },
+        { features: { $in: [sRegex] } },
+        { 'multilingual.title.hi': sRegex },
+        { 'multilingual.description.hi': sRegex }
       ];
     }
 
@@ -318,6 +335,12 @@ export const updateProduct = async (req, res, next) => {
       availability,
       stockStatus,
       tags,
+      features,
+      attributes,
+      keywords,
+      multilingual,
+      aiMetadata,
+      enhancedImages,
       isPublished
     } = req.body;
 
@@ -330,6 +353,12 @@ export const updateProduct = async (req, res, next) => {
     if (availability !== undefined) product.availability = Boolean(availability);
     if (stockStatus) product.stockStatus = stockStatus;
     if (tags && Array.isArray(tags)) product.tags = tags;
+    if (features && Array.isArray(features)) product.features = features;
+    if (attributes && typeof attributes === 'object') product.attributes = attributes;
+    if (keywords && Array.isArray(keywords)) product.keywords = keywords;
+    if (multilingual) product.multilingual = multilingual;
+    if (aiMetadata) product.aiMetadata = { ...product.aiMetadata, ...aiMetadata };
+    if (enhancedImages && Array.isArray(enhancedImages)) product.enhancedImages = enhancedImages;
     if (isPublished !== undefined) product.isPublished = Boolean(isPublished);
 
     await product.save();

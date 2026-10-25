@@ -12,7 +12,9 @@ import {
   ArrowLeft,
   Share2,
   Eye,
-  Tag
+  Tag,
+  Briefcase,
+  Clock
 } from 'lucide-react';
 import axiosClient from '../../api/axiosClient.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -189,8 +191,46 @@ const ProductDetailPage = () => {
                 >
                   {product.stockStatus.replace('_', ' ')}
                 </span>
+                {product.availabilityUpdatedAt && (
+                  <span className="flex items-center gap-1 text-[10px] text-slate-500 mt-1 justify-end font-medium">
+                    <Clock className="w-3 h-3 text-slate-400" />
+                    Verified {new Date(product.availabilityUpdatedAt).toLocaleDateString()}
+                  </span>
+                )}
               </div>
             </div>
+
+            {/* B2B Wholesale Tier */}
+            {product.b2b?.enabled && (
+              <div className="p-4 rounded-2xl bg-indigo-50/80 border border-indigo-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-900">
+                    <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+                    B2B Wholesale / Bulk Purchase Tier
+                  </span>
+                  <span className="text-[11px] font-bold bg-indigo-200/80 text-indigo-900 px-2 py-0.5 rounded-full">
+                    MOQ: {product.b2b.minOrderQuantity || 50} units
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-xs text-indigo-950">
+                  <div>
+                    <span className="text-indigo-600 font-medium block text-[11px]">Wholesale Bulk Price</span>
+                    <span className="text-base font-black">
+                      {product.b2b.bulkPrice ? `₹${product.b2b.bulkPrice} / unit` : 'Tiered Pricing Available'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-indigo-600 font-medium block text-[11px]">Production Lead Time</span>
+                    <span className="text-sm font-bold">
+                      {product.b2b.leadTimeDays ? `${product.b2b.leadTimeDays} business days` : '1-2 weeks'}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-indigo-800/80 leading-relaxed">
+                  Bulk order directly from verified local maker with GST tax invoices, quality assurance, and packaging customization.
+                </p>
+              </div>
+            )}
 
             {/* Description */}
             <div>
@@ -277,7 +317,7 @@ const ProductDetailPage = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-slate-900 text-lg">{product.sellerId.businessName}</h3>
-                {product.sellerId.verificationStatus === 'APPROVED' && (
+                {(product.sellerId.verificationStatus === 'APPROVED' || product.sellerId.verificationStatus === 'VERIFIED') && (
                   <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-xs font-bold border border-emerald-200">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                     Verified Maker

@@ -140,7 +140,7 @@ const AdminSellersPage = () => {
                     {/* Verification Status Pill */}
                     <span
                       className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                        s.verificationStatus === 'APPROVED'
+                        s.verificationStatus === 'APPROVED' || s.verificationStatus === 'VERIFIED'
                           ? 'bg-emerald-100 text-emerald-800'
                           : s.verificationStatus === 'PENDING'
                           ? 'bg-amber-100 text-amber-900'
@@ -156,6 +156,12 @@ const AdminSellersPage = () => {
                   <p className="text-xs text-slate-500">
                     Owner: <strong>{s.userId?.name}</strong> ({s.userId?.email}) • {s.city}, {s.state} {s.phone ? `• ${s.phone}` : ''}
                   </p>
+                  {s.verificationDetails?.documentNumber && (
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-mono text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200/60 w-fit">
+                      <span className="font-bold">{s.verificationDetails.documentType}:</span>
+                      <span>{s.verificationDetails.documentNumber}</span>
+                    </div>
+                  )}
                   {s.description && (
                     <p className="text-xs text-slate-600 line-clamp-1 max-w-xl">{s.description}</p>
                   )}
@@ -174,17 +180,17 @@ const AdminSellersPage = () => {
                   <span>Preview</span>
                 </Link>
 
-                {s.verificationStatus !== 'APPROVED' && (
+                {s.verificationStatus !== 'APPROVED' && s.verificationStatus !== 'VERIFIED' && (
                   <button
-                    onClick={() => handleUpdateVerification(s._id, 'APPROVED')}
+                    onClick={() => handleUpdateVerification(s._id, 'VERIFIED')}
                     className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Approve</span>
+                    <span>Verify & Approve</span>
                   </button>
                 )}
 
-                {s.verificationStatus !== 'SUSPENDED' && s.verificationStatus === 'APPROVED' && (
+                {s.verificationStatus !== 'SUSPENDED' && (s.verificationStatus === 'APPROVED' || s.verificationStatus === 'VERIFIED') && (
                   <button
                     onClick={() => handleUpdateVerification(s._id, 'SUSPENDED')}
                     className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-xl transition flex items-center gap-1 border border-amber-200"
