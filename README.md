@@ -1,15 +1,16 @@
 # SwaShop — Smart Market Linkage Platform
 
-> **Phase 1 Production Foundation**  
-> Empowering local artisans, shopkeepers, MSMEs, and micro-entrepreneurs to digitize their unique crafts, connect with nearby customers, and expand through regional reseller networks.
+> **Phase 1 & Phase 2 Production Ready**  
+> Empowering local artisans, shopkeepers, MSMEs, and micro-entrepreneurs to digitize their unique crafts, connect with nearby customers, expand through regional reseller networks, and scale with **AI-Powered Seller Intelligence**.
 
 ---
 
 ## 🌟 Overview & Purpose
 
-**SwaShop** is a full-stack local commerce and market linkage platform built to solve the discoverability and distribution bottleneck faced by regional Indian artisans and neighborhood shopkeepers.
+**SwaShop** is a full-stack local commerce and market linkage platform built to solve the discoverability, distribution, and cataloging bottleneck faced by regional Indian artisans and neighborhood shopkeepers.
 
-In traditional e-commerce, small makers are either excluded by steep margins, complicated onboarding, or disconnected from their immediate community. SwaShop bridges this gap with **Hyperlocal Discovery**, **Role-based Commerce**, and an innovative **Maker-to-Seller Reseller Engine**.
+In traditional e-commerce, small makers are either excluded by steep margins, complicated onboarding, language barriers, or disconnected from their immediate community. SwaShop bridges this gap with **Hyperlocal Discovery**, **Role-based Commerce**, an innovative **Maker-to-Seller Reseller Engine**, and **Phase 2 AI-Powered Seller Intelligence** (Voice-to-Catalog, Multilingual Generation, Non-Destructive Studio Image Enhancement, and Fair Craft Cost-Plus Pricing).
+
 
 ---
 
@@ -42,6 +43,39 @@ SwaShop defines exactly three roles with zero role bloat:
 * Image upload pipeline supporting multi-file drag-and-drop, client previews, validation, and static storage via Multer with Cloudinary compatibility.
 
 ---
+
+## 🤝 Phase 3: Smart Market Linkage Engine
+
+Phase 3 transforms SwaShop from a marketplace into an intelligent market linkage network connecting consumers, institutional buyers, and artisans:
+
+### 1. Intelligent Search & Multi-factor Discovery (`/api/search`)
+* **Multi-Factor Composite Ranking**: Dynamically balances text relevance, product availability status (`AVAILABLE`, `LOW_STOCK`), verified seller status, and catalog quality score.
+* **Instant Typeahead Suggestions (`/api/search/suggestions?q=...`)**: Fast debounced search suggestions over product titles, categories, and artisan tags.
+* **Semantic Buyer Intent Recognition**: Natural language query expansion (e.g. *"eco friendly gift for corporate event"* finds bamboo hamper and handloom gift sets).
+* **Zero-Result Bridge**: When a query yields zero direct catalog matches, provides grounded category suggestions and bridges buyers directly to post a custom B2B requirement RFP.
+* **Geodesic Distance Filtering**: Nearby artisan discovery with customizable radius filters (2km, 5km, 10km, 25km, 50km).
+
+### 2. Customer & Buyer Favourites System (`/api/favourites`)
+* Cross-device persistence for saving favorite handmade products and artisan shops.
+* Dedicated `/customer/saved` portal with dual tabs (Products and Shops) with one-click inquiry and direct shop access.
+
+### 3. Seller Trust & Verification Pipeline
+* **Merchant Verification Requests (`/api/sellers/verification/request`)**: Merchants submit proof of authenticity (Udyam MSME Registration, Government Artisan/Weavers Card, GSTIN, or Municipal Trade License).
+* **Admin Verification Console (`/api/admin/sellers/:id/verification`)**: Platform administrators review uploaded documents, record audit notes, and approve or reject applications.
+* **Verified Maker Trust Badges**: Verified merchants receive a green shield/check badge on search results, product detail pages, and storefronts, with automated ranking boost.
+
+### 4. B2B Institutional Procurement & Matching Engine (`/b2b`)
+* **Single Identity B2B Expansion**: Existing customers or businesses can activate a Buyer Profile with zero duplicate logins or separate databases.
+* **B2B Requirement RFP Creation (`/b2b/requirements/new`)**: Buyers post detailed bulk requirements (quantity, budget per unit, deadline, category, custom specifications).
+* **Automated Matchmaking Engine (`/api/b2b/requirements/:id/matches`)**: Deterministically ranks verified local workshops based on production capacity, category match, location proximity, and pricing fit, providing explainable matching reasons.
+* **Direct RFP Enquiries**: Buyers can send single-click inquiries directly to matched sellers.
+* **Seller B2B Capacity Management (`/api/b2b/seller/profile`)**: Artisans configure monthly production capacity, MOQ (Minimum Order Quantity), typical lead times, and bulk availability.
+
+### 5. Seller Discovery Analytics & Demand Insights (`/api/analytics/seller`)
+* Real-time telemetry tracking search impressions, product page views, customer leads generated, and conversion ratio.
+* Category-level demand signals and trending buyer search keywords.
+* Actionable AI and market demand recommendations helping makers capitalize on regional procurement trends.
+
 
 ## 🛠 Tech Stack
 
@@ -211,6 +245,7 @@ npm run test --workspace=server
 
 ## 📄 License & Attribution
 Developed for SwaShop Phase 1. All rights reserved.
+# SwaShop
 # SwaShop
 # SwaShop
 # SwaShop
