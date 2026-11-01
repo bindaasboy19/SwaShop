@@ -10,6 +10,7 @@ import ProductDetailPage from '../components/pages/public/ProductDetailPage.jsx'
 import SellerDetailPage from '../components/pages/public/SellerDetailPage.jsx';
 import LoginPage from '../components/pages/public/LoginPage.jsx';
 import RegisterPage from '../components/pages/public/RegisterPage.jsx';
+import OrdersPage from '../components/pages/public/OrdersPage.jsx';
 
 // Customer Pages
 import SavedItemsPage from '../components/pages/customer/SavedItemsPage.jsx';
@@ -67,8 +68,17 @@ const AppRoutes = () => {
       <Route path="/categories/:slug" element={<CategoryProductsPage />} />
       <Route path="/products/:id" element={<ProductDetailPage />} />
       <Route path="/sellers/:id" element={<SellerDetailPage />} />
+      <Route path="/store/:id" element={<SellerDetailPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route
+        path="/orders"
+        element={
+          <ProtectedRoute allowedRoles={['CUSTOMER', 'SELLER']}>
+            <OrdersPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* B2B Market Linkage Routes */}
       <Route path="/b2b" element={<B2BHubPage />} />
@@ -155,11 +165,7 @@ const AppRoutes = () => {
       />
       <Route
         path="/seller/ai-studio"
-        element={
-          <ProtectedRoute allowedRoles={['SELLER']}>
-            <SellerAIStudioPage />
-          </ProtectedRoute>
-        }
+        element={<Navigate to="/seller/products/new" replace />}
       />
       <Route
         path="/seller/products"

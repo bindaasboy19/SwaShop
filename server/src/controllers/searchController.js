@@ -104,10 +104,11 @@ export const searchAll = async (req, res, next) => {
     }
 
     // Price range
-    if (minPrice || maxPrice) {
+    if (minPrice || maxPrice || semanticContext.intent?.budget) {
       productQuery.price = {};
       if (minPrice) productQuery.price.$gte = parseFloat(minPrice);
       if (maxPrice) productQuery.price.$lte = parseFloat(maxPrice);
+      else if (semanticContext.intent?.budget) productQuery.price.$lte = semanticContext.intent.budget;
     }
 
     // B2B Only product flag
@@ -251,6 +252,7 @@ export const searchAll = async (req, res, next) => {
       success: true,
       query: cleanQ,
       isSemantic: semanticContext.isSemantic,
+      intent: semanticContext.intent || null,
       resultsCount: {
         products: products.length,
         sellers: matchedSellers.length,

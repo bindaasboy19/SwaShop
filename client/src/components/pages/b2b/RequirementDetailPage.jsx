@@ -12,11 +12,14 @@ import {
   AlertCircle,
   TrendingUp,
   X,
-  Package
+  Package,
+  FileText,
+  Check
 } from 'lucide-react';
 import axiosClient from '../../api/axiosClient.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { useToast } from '../../../context/ToastContext.jsx';
+import B2BQuoteModal from '../../modals/B2BQuoteModal.jsx';
 
 const RequirementDetailPage = () => {
   const { id } = useParams();
@@ -25,8 +28,10 @@ const RequirementDetailPage = () => {
 
   const [requirement, setRequirement] = useState(null);
   const [matches, setMatches] = useState([]);
+  const [quotes, setQuotes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMatchingLoading, setIsMatchingLoading] = useState(true);
+  const [isLoadingQuotes, setIsLoadingQuotes] = useState(false);
 
   // Enquiry Modal state
   const [selectedSeller, setSelectedSeller] = useState(null);
@@ -34,6 +39,30 @@ const RequirementDetailPage = () => {
   const [enquiryQuantity, setEnquiryQuantity] = useState(100);
   const [targetPrice, setTargetPrice] = useState('');
   const [isSendingEnquiry, setIsSendingEnquiry] = useState(false);
+
+  // B2B Quote Modal state
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [isAcceptingQuote, setIsAcceptingQuote] = useState(false);
+
+  const isOwner = requirement && user && (
+    (typeof requirement.buyerId === 'object' && requirement.buyerId?._id === user._id) ||
+    requirement.buyerId === user._id
+  );
+  const isSeller = user?.role === 'SELLER';
+
+  const fetchQuotes = async () => {
+    try {
+      setIsLoadingQuotes(true);
+      const res = await axiosClient.get(`/b2b/quotes/requirement/${id}`);
+      if (res.success) {
+        setQuotes(res.quotes || []);
+      }
+    } catch (err) {
+      // Non-owner might receive 403, which is expected
+    } finally {
+      setIsLoadingQuotes(false);
+    }
+  };
 
   useEffect(() => {
     const fetchRequirementAndMatches = async () => {
@@ -47,7 +76,16 @@ const RequirementDetailPage = () => {
             `Hello, we are interested in placing a bulk order for "${res.requirement.title}". Could you please review our quantity requirements and share your best wholesale quotation?`
           );
 
-          // Now fetch matches
+          // If buyer is viewing their own requirement, load received quotes
+          const ownerCheck = user && (
+            (typeof res.requirement.buyerId === 'object' && res.requirement.buyerId?._id === user._id) ||
+            res.requirement.buyerId === user._id
+          );
+          if (ownerCheck) {
+            fetchQuotes();
+          }
+
+          // Fetch matches
           setIsMatchingLoading(true);
           const matchRes = await axiosClient.post(`/b2b/requirements/${id}/matches`);
           if (matchRes.success) {
@@ -63,7 +101,23 @@ const RequirementDetailPage = () => {
     };
 
     fetchRequirementAndMatches();
-  }, [id]);
+  }, [id, user]);
+
+  const handleAcceptQuote = async (quoteId) => {
+    if (!window.confirm('Accept this quotation? This will automatically generate a confirmed B2B order.')) return;
+    try {
+      setIsAcceptingQuote(true);
+      const res = await axiosClient.patch(`/b2b/quotes/${quoteId}/accept`);
+      if (res.success) {
+        showToast('Quotation accepted! B2B Order has been placed.', 'success');
+        fetchQuotes();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to accept quotation.', 'error');
+    } finally {
+      setIsAcceptingQuote(false);
+    }
+  };
 
   const handleOpenEnquiryModal = (seller) => {
     if (!isAuthenticated) {
@@ -226,7 +280,109 @@ const RequirementDetailPage = () => {
             ))}
           </div>
         )}
+
+        {/* Seller Action: Submit Quotation */}
+        {isSeller && (
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between bg-indigo-50/50 p-4 rounded-2xl">
+            <div>
+              <h4 className="text-xs font-bold text-indigo-900">Are you a maker or supplier for this requirement?</h4>
+              <p className="text-[11px] text-slate-500">Submit a formal price quote, bulk timeline, and wholesale specifications.</p>
+            </div>
+            <button
+              onClick={() => setIsQuoteModalOpen(true)}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 shrink-0"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Submit Quotation (RFQ)</span>
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Owner View: Received Quotations */}
+      {isOwner && (
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 space-y-4 shadow-xs">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-indigo-600" />
+              <h2 className="text-lg font-extrabold text-slate-900">
+                Received Quotations & Supplier Proposals ({quotes.length})
+              </h2>
+            </div>
+            <span className="text-xs font-semibold text-slate-400">Buyer RFQ Workbench</span>
+          </div>
+
+          {isLoadingQuotes ? (
+            <div className="h-28 bg-slate-100 rounded-2xl animate-pulse" />
+          ) : quotes.length > 0 ? (
+            <div className="space-y-4">
+              {quotes.map((quote) => (
+                <div
+                  key={quote._id}
+                  className="border border-slate-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-indigo-300 transition"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                        {quote.quoteNumber}
+                      </span>
+                      <h4 className="font-bold text-slate-800 text-sm">
+                        {quote.sellerId?.businessName || 'Verified Supplier'}
+                      </h4>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                          quote.status === 'CONVERTED_TO_ORDER'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : quote.status === 'REJECTED'
+                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        }`}
+                      >
+                        {quote.status === 'CONVERTED_TO_ORDER' ? 'Order Created' : quote.status}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-500">
+                      Lead Time: <strong>~{quote.leadTimeDays || 7} Days</strong> • Shipping:{' '}
+                      <strong>{quote.shippingIncluded ? 'Included in Quote' : 'Charged separately'}</strong>
+                    </p>
+                    {quote.notes && <p className="text-xs text-slate-600 italic">"{quote.notes}"</p>}
+                  </div>
+
+                  <div className="flex items-center gap-4 shrink-0 justify-between sm:justify-end">
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase block">Total Quote Value</span>
+                      <strong className="text-lg font-black text-slate-900">₹{quote.totalAmount?.toLocaleString()}</strong>
+                    </div>
+
+                    {quote.status === 'PENDING' ? (
+                      <button
+                        onClick={() => handleAcceptQuote(quote._id)}
+                        disabled={isAcceptingQuote}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>Accept & Place Order</span>
+                      </button>
+                    ) : quote.orderId ? (
+                      <Link
+                        to="/orders"
+                        className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition"
+                      >
+                        View Order
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 py-4 text-center">
+              No formal quotations received yet from suppliers. We notify sellers matching your category requirements.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Matching Sellers Engine Results */}
       <div className="space-y-4">
@@ -441,6 +597,17 @@ const RequirementDetailPage = () => {
           </div>
         </div>
       )}
+
+      {/* B2B Quote Submission Modal */}
+      <B2BQuoteModal
+        isOpen={isQuoteModalOpen}
+        onClose={() => setIsQuoteModalOpen(false)}
+        requirement={requirement}
+        onSuccess={() => {
+          showToast('Quotation sent to buyer!', 'success');
+          if (isOwner) fetchQuotes();
+        }}
+      />
     </div>
   );
 };

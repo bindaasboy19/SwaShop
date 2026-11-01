@@ -11,12 +11,23 @@ const EnquiryModal = ({ isOpen, onClose, seller, product = null }) => {
 
   const [message, setMessage] = useState(
     product
-      ? `Hello! I am interested in '${product.name}'. Could you please share availability and delivery options?`
-      : 'Hello! I would like to inquire about your products and custom craft orders.'
+      ? `Hello! Is '${product.name}' in stock at your shop right now? I would like to visit to inspect the quality.`
+      : 'Hello! I would like to inquire about your shop timings and available stock.'
   );
   const [phone, setPhone] = useState(user?.phone || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const quickPrompts = product ? [
+    'Is this in stock right now?',
+    'What are your shop hours today?',
+    'Can I visit this evening to check quality?',
+    'Do you have multiple pieces available?'
+  ] : [
+    'What are your shop hours today?',
+    'Where is your physical shop located?',
+    'Do you accept custom craft orders?'
+  ];
 
   if (!seller) return null;
 
@@ -44,18 +55,18 @@ const EnquiryModal = ({ isOpen, onClose, seller, product = null }) => {
       });
 
       if (res.success) {
-        showToast('Enquiry sent to the seller successfully!', 'success');
+        showToast('Message sent to shop owner successfully!', 'success');
         onClose();
       }
     } catch (err) {
-      setError(err.message || 'Failed to send enquiry. Please try again.');
+      setError(err.message || 'Failed to send message. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Contact ${seller.businessName || 'Seller'}`} maxWidth="max-w-lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Chat with ${seller.businessName || 'Shop'}`} maxWidth="max-w-lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2">
@@ -72,23 +83,42 @@ const EnquiryModal = ({ isOpen, onClose, seller, product = null }) => {
               className="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0"
             />
             <div className="min-w-0">
-              <p className="text-xs text-slate-500">Inquiring about:</p>
+              <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Inquiring about:</p>
               <p className="font-bold text-slate-900 text-sm truncate">{product.name}</p>
               <p className="text-xs font-semibold text-brand-600">₹{product.price}</p>
             </div>
           </div>
         )}
 
+        {/* Quick prompt chips */}
+        <div className="space-y-1.5">
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            Quick Questions
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {quickPrompts.map((q, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setMessage(q)}
+                className="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
             Your Message *
           </label>
           <textarea
-            rows="4"
+            rows="3"
             required
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Ask about bulk pricing, custom sizes, availability, or dispatch..."
+            placeholder="Ask about stock availability, shop timings, or quality inspection..."
             className="w-full p-3 text-sm rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none"
           />
         </div>

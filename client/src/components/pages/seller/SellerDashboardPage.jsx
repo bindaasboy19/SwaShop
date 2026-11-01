@@ -21,11 +21,16 @@ import {
   BarChart3,
   Search,
   FileText,
-  X
+  X,
+  QrCode,
+  TrendingDown,
+  Check,
+  Truck
 } from 'lucide-react';
 import axiosClient from '../../api/axiosClient.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
+import QrModal from '../../modals/QrModal.jsx';
 
 const SellerDashboardPage = () => {
   const { user, sellerProfile } = useAuth();
@@ -34,6 +39,9 @@ const SellerDashboardPage = () => {
   const [enquiries, setEnquiries] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [demandInsights, setDemandInsights] = useState(null);
+  const [demandForecast, setDemandForecast] = useState(null);
+  const [sellerRecommendations, setSellerRecommendations] = useState([]);
+  const [sellerOrders, setSellerOrders] = useState([]);
   const [b2bEnquiries, setB2bEnquiries] = useState([]);
   const [verificationStatus, setVerificationStatus] = useState(sellerProfile?.verificationStatus || 'PENDING');
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
@@ -41,19 +49,27 @@ const SellerDashboardPage = () => {
   const [docNumber, setDocNumber] = useState('');
   const [docNotes, setDocNotes] = useState('');
   const [isSubmittingVerify, setIsSubmittingVerify] = useState(false);
+
+  // Storefront QR Modal State
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [storeQrData, setStoreQrData] = useState(null);
+  const [isLoadingQr, setIsLoadingQr] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchSellerData = async () => {
       setIsLoading(true);
       try {
-        const [catRes, enqRes, analyticsRes, insightsRes, b2bEnqRes, verRes] = await Promise.all([
+        const [catRes, enqRes, analyticsRes, insightsRes, b2bEnqRes, verRes, forecastRes, recsRes, ordersRes] = await Promise.all([
           axiosClient.get('/reseller-listings/catalogue'),
           axiosClient.get('/enquiries/received'),
           axiosClient.get('/analytics/seller').catch(() => ({ success: false })),
           axiosClient.get('/analytics/seller/insights').catch(() => ({ success: false })),
           axiosClient.get('/b2b/seller/enquiries').catch(() => ({ success: false })),
-          axiosClient.get('/sellers/verification/status').catch(() => ({ success: false }))
+          axiosClient.get('/sellers/verification/status').catch(() => ({ success: false })),
+          axiosClient.get('/recommendations/demand-forecast').catch(() => ({ success: false })),
+          axiosClient.get('/recommendations/seller').catch(() => ({ success: false })),
+          axiosClient.get('/orders/seller').catch(() => ({ success: false }))
         ]);
         if (catRes.success) setCatalogue(catRes);
         if (enqRes.success) setEnquiries(enqRes.enquiries || []);
@@ -61,6 +77,9 @@ const SellerDashboardPage = () => {
         if (insightsRes.success) setDemandInsights(insightsRes.insights);
         if (b2bEnqRes.success) setB2bEnquiries(b2bEnqRes.enquiries || []);
         if (verRes.success) setVerificationStatus(verRes.verificationStatus);
+        if (forecastRes.success) setDemandForecast(forecastRes);
+        if (recsRes.success) setSellerRecommendations(recsRes.recommendations || []);
+        if (ordersRes.success) setSellerOrders(ordersRes.orders || []);
       } catch (err) {
         console.error('Failed to load seller dashboard metrics:', err);
       } finally {
@@ -69,6 +88,25 @@ const SellerDashboardPage = () => {
     };
     fetchSellerData();
   }, []);
+
+  const handleOpenStoreQr = async () => {
+    if (!sellerProfile?._id) {
+      showToast('Seller profile required to generate storefront QR code', 'warning');
+      return;
+    }
+    setIsQrModalOpen(true);
+    setIsLoadingQr(true);
+    try {
+      const res = await axiosClient.get(`/qr/store/${sellerProfile._id}`);
+      if (res.success) {
+        setStoreQrData(res);
+      }
+    } catch (err) {
+      showToast('Failed to load store QR card', 'error');
+    } finally {
+      setIsLoadingQr(false);
+    }
+  };
 
   const handleRequestVerification = async (e) => {
     e.preventDefault();
@@ -136,23 +174,24 @@ const SellerDashboardPage = () => {
 
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            to="/seller/ai-studio"
-            className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-2 shrink-0 border border-purple-400/40"
-          >
-            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-            <span>Open AI Studio</span>
-          </Link>
-          <Link
             to="/seller/products/new"
-            className="px-5 py-2.5 rounded-xl bg-white text-brand-900 hover:bg-amber-50 font-bold text-xs shadow-sm transition flex items-center gap-2 shrink-0"
+            className="px-6 py-3 rounded-xl bg-white text-brand-900 hover:bg-amber-50 font-black text-xs shadow-md hover:shadow-lg transition flex items-center gap-2 shrink-0 border border-amber-200"
           >
             <PlusCircle className="w-4 h-4 text-brand-600" />
-            <span>Add Product</span>
+            <span>+ Add New Product</span>
           </Link>
+          <button
+            type="button"
+            onClick={handleOpenStoreQr}
+            className="px-4 py-3 rounded-xl bg-slate-900/40 hover:bg-slate-900/60 text-white font-semibold text-xs border border-white/20 transition flex items-center gap-1.5 shrink-0"
+          >
+            <QrCode className="w-4 h-4 text-amber-300" />
+            <span>Storefront QR</span>
+          </button>
           {sellerProfile?._id && (
             <Link
               to={`/sellers/${sellerProfile._id}`}
-              className="px-4 py-2.5 rounded-xl bg-slate-900/40 hover:bg-slate-900/60 text-white font-semibold text-xs border border-white/20 transition shrink-0"
+              className="px-4 py-3 rounded-xl bg-slate-900/40 hover:bg-slate-900/60 text-white font-semibold text-xs border border-white/20 transition shrink-0"
             >
               View Public Shop
             </Link>
@@ -160,58 +199,36 @@ const SellerDashboardPage = () => {
         </div>
       </div>
 
-      {/* AI Superpowers Banner Card */}
-      <div className="bg-gradient-to-r from-purple-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl border border-purple-800/40 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+      {/* Embedded AI Listing Assistant Highlight */}
+      <div className="bg-gradient-to-r from-amber-900 via-brand-950 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl border border-amber-800/40 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-purple-400/30">
+            <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-amber-400/30">
               <Sparkles className="w-3 h-3 text-amber-300" />
-              SwaShop Phase 2 Intelligence
+              Embedded Listing Assistant
             </span>
+            <span className="text-xs text-amber-200/80 font-medium">• No Technical Skills Required</span>
           </div>
           <h2 className="text-xl font-bold tracking-tight">
-            Seller AI Studio: 4 Superpowers For Your Shop
+            Digitize Your Physical Products with AI Assistance
           </h2>
-          <p className="text-xs text-purple-200/80 max-w-2xl leading-relaxed">
-            Generate multilingual catalogs from voice or notes, enhance photos with studio sharpness, and calculate fair cost-plus prices.
+          <p className="text-xs text-amber-100/80 max-w-2xl leading-relaxed">
+            Snap a product photo with your phone, enter rough notes or speak naturally, and tap <strong>[ AI ENHANCE ]</strong> inside the product form to generate professional multilingual descriptions, search tags, and cleaned photography.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full lg:w-auto shrink-0">
-          <Link
-            to="/seller/ai-studio"
-            className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-center transition flex flex-col items-center gap-1 group"
-          >
-            <Sparkles className="w-4 h-4 text-purple-400 group-hover:scale-110 transition" />
-            <span className="text-[11px] font-bold">Catalog AI</span>
-          </Link>
-          <Link
-            to="/seller/ai-studio"
-            className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-center transition flex flex-col items-center gap-1 group"
-          >
-            <Mic className="w-4 h-4 text-rose-400 group-hover:scale-110 transition" />
-            <span className="text-[11px] font-bold">Voice-to-Shop</span>
-          </Link>
-          <Link
-            to="/seller/ai-studio"
-            className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-center transition flex flex-col items-center gap-1 group"
-          >
-            <ImageIcon className="w-4 h-4 text-blue-400 group-hover:scale-110 transition" />
-            <span className="text-[11px] font-bold">Photo Studio</span>
-          </Link>
-          <Link
-            to="/seller/ai-studio"
-            className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-center transition flex flex-col items-center gap-1 group"
-          >
-            <DollarSign className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition" />
-            <span className="text-[11px] font-bold">Pricing Guide</span>
-          </Link>
-        </div>
+        <Link
+          to="/seller/products/new"
+          className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs shadow-md transition flex items-center gap-2 shrink-0"
+        >
+          <PlusCircle className="w-4 h-4 text-amber-950" />
+          <span>Add Product with AI Assist →</span>
+        </Link>
       </div>
 
 
       {/* Real-time Dashboard KPI Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
         {/* Total Catalogue */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
@@ -266,6 +283,20 @@ const SellerDashboardPage = () => {
           <span className="text-[11px] text-blue-700 font-bold">
             {pendingEnquiries} Pending Response
           </span>
+        </div>
+
+        {/* Store Orders & Fulfilment */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
+            <span>Store Orders</span>
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <Truck className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl sm:text-3xl font-black text-slate-900">{sellerOrders.length}</p>
+          <Link to="/orders" className="text-[11px] text-indigo-600 font-bold hover:underline flex items-center gap-1">
+            <span>Fulfil Orders →</span>
+          </Link>
         </div>
       </div>
 
@@ -496,6 +527,132 @@ const SellerDashboardPage = () => {
         </div>
       </div>
 
+      {/* 30-Day Demand Outlook & Market Forecasting */}
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-bold uppercase tracking-wider border border-emerald-200">
+                Phase 4 Predictive Engine
+              </span>
+              <span className="text-xs font-bold text-slate-500">• 30-Day Outlook</span>
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2 mt-1">
+              <TrendingUp className="w-5 h-5 text-emerald-600" />
+              <span>Category Demand Forecasting & Outlook</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Aggregated from search volume, customer inquiries, and B2B wholesale requirements
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-400">Confidence:</span>
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                demandForecast?.confidence === 'HIGH'
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : demandForecast?.confidence === 'MEDIUM'
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              {demandForecast?.confidence || 'MEDIUM'} Confidence
+            </span>
+          </div>
+        </div>
+
+        {demandForecast?.summary && (
+          <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 text-xs text-emerald-950 flex items-start gap-3">
+            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <strong className="font-bold block mb-0.5">Market Forecast Summary:</strong>
+              <p className="leading-relaxed">{demandForecast.summary}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {(demandForecast?.forecasts || []).map((fc, idx) => (
+            <div
+              key={idx}
+              className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-emerald-300 hover:shadow-xs transition space-y-3 flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold mb-1">
+                  <span className="text-slate-900">{fc.categoryName}</span>
+                  <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    {fc.opportunityScore || 75}/100 Score
+                  </span>
+                </div>
+                <span className="text-xs font-extrabold text-emerald-600 block">{fc.outlook}</span>
+
+                {fc.drivers?.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-[11px] text-slate-500 list-disc list-inside">
+                    {fc.drivers.map((d, dIdx) => (
+                      <li key={dIdx}>{d}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {fc.actionAdvice && (
+                <div className="pt-2 border-t border-slate-200 text-[11px] font-medium text-slate-600">
+                  💡 {fc.actionAdvice}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Seller Catalog Growth & Quality Recommendations */}
+      {sellerRecommendations.length > 0 && (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-8 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              <h2 className="text-lg font-bold text-slate-900">
+                Actionable Catalog Optimization Recommendations ({sellerRecommendations.length})
+              </h2>
+            </div>
+            <span className="text-xs font-semibold text-slate-400">AI Powered Advice</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {sellerRecommendations.map((rec, idx) => (
+              <div
+                key={idx}
+                className="p-4 rounded-2xl border border-purple-100 bg-purple-50/30 hover:bg-purple-50/60 transition space-y-2 flex flex-col justify-between"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-purple-900">{rec.title}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                      {rec.type?.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">{rec.insight}</p>
+                </div>
+
+                <div className="pt-2 border-t border-purple-100 flex items-center justify-between text-xs">
+                  <span className="text-[11px] font-semibold text-purple-800">
+                    Action: {rec.suggestedAction}
+                  </span>
+                  <Link
+                    to="/seller/ai-studio"
+                    className="font-bold text-purple-700 hover:text-purple-900 flex items-center gap-1 shrink-0"
+                  >
+                    <span>Use AI Studio</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* B2B Wholesale Market Linkage Hub */}
       <div className="bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-indigo-800/60 pb-5">
@@ -657,6 +814,17 @@ const SellerDashboardPage = () => {
           </div>
         </div>
       )}
+
+      {/* Storefront Digital QR Code Modal */}
+      <QrModal
+        isOpen={isQrModalOpen}
+        onClose={() => setIsQrModalOpen(false)}
+        title="Digital Storefront QR"
+        subtitle={sellerProfile?.businessName || `${user?.name}'s Workshop`}
+        canonicalUrl={storeQrData?.canonicalUrl}
+        qrDataUrl={storeQrData?.qrDataUrl}
+        whatsappUrl={storeQrData?.whatsappUrl}
+      />
     </div>
   );
 };

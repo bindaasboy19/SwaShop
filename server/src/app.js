@@ -16,6 +16,13 @@ import adminRoutes from './routes/adminRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import b2bRoutes from './routes/b2bRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import qrRoutes from './routes/qrRoutes.js';
+import recommendationRoutes from './routes/recommendationRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import moderationRoutes from './routes/moderationRoutes.js';
+import mongoose from 'mongoose';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,12 +42,21 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const uploadDir = path.resolve(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadDir));
 
-// Health check
+// Health & Readiness checks
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     app: 'SwaShop API',
-    phase: 'Phase 3 - Smart Market Linkage Engine',
+    phase: 'Phase 4 - Production + Startup Scale Layer',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/health/ready', (req, res) => {
+  const isDbReady = mongoose.connection.readyState === 1;
+  res.status(isDbReady ? 200 : 503).json({
+    status: isDbReady ? 'ready' : 'not_ready',
+    database: isDbReady ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString()
   });
 });
@@ -59,7 +75,12 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/b2b', b2bRoutes);
 app.use('/api/analytics', analyticsRoutes);
-
+app.use('/api/orders', orderRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/qr', qrRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/moderation', moderationRoutes);
 
 // Error Handling
 app.use(notFoundHandler);

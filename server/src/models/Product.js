@@ -134,6 +134,14 @@ const productSchema = new mongoose.Schema(
     views: {
       type: Number,
       default: 0
+    },
+    orderCount: {
+      type: Number,
+      default: 0
+    },
+    ratings: {
+      average: { type: Number, default: 5.0, min: 1, max: 5 },
+      count: { type: Number, default: 0 }
     }
   },
   {

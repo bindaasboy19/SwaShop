@@ -88,15 +88,15 @@ const HomePage = () => {
           <div className="text-center max-w-3xl mx-auto space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold tracking-wide uppercase">
               <Sparkles className="w-3.5 h-3.5 text-brand-600" />
-              <span>Smart Market Linkage for Artisans & MSMEs</span>
+              <span>Local Market Discovery & Shop Digitization</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              Discover Authentic Local Crafts, Goods & Regional Makers
+              What are you looking for?
             </h1>
 
             <p className="text-slate-600 text-base sm:text-lg leading-relaxed">
-              Connect directly with nearby bamboo artisans, handloom weavers, terracotta potters, and organic micro-entrepreneurs.
+              Find which nearby physical shop has the product you need, connect with the maker, and get directions to visit.
             </p>
 
             {/* Main Search & Location Bar */}
@@ -112,7 +112,7 @@ const HomePage = () => {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search bamboo baskets, clay matkas, raw honey..."
+                    placeholder="Search products (e.g. bamboo basket, terracotta vase, wireless mouse, raw honey)..."
                     className="w-full py-2.5 text-sm bg-transparent outline-none text-slate-800 placeholder:text-slate-400 font-medium"
                   />
                 </div>
@@ -132,7 +132,7 @@ const HomePage = () => {
                   type="submit"
                   className="w-full sm:w-auto px-6 py-3 rounded-full bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold shadow-md transition shrink-0"
                 >
-                  Explore Now
+                  Find Product
                 </button>
               </form>
             </div>

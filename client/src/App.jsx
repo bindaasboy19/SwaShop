@@ -3,6 +3,7 @@ import { BrowserRouter, useLocation } from 'react-router-dom';
 import { ToastProvider } from './context/ToastContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { LocationProvider } from './context/LocationContext.jsx';
+import { LanguageProvider } from './context/LanguageContext.jsx';
 import Navbar from './components/common/Navbar.jsx';
 import Footer from './components/common/Footer.jsx';
 import AppRoutes from './routes/AppRoutes.jsx';
@@ -23,16 +24,18 @@ const App = () => {
     <ToastProvider>
       <AuthProvider>
         <LocationProvider>
-          <BrowserRouter>
-            <ScrollToTop />
-            <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased selection:bg-brand-500 selection:text-white">
-              <Navbar />
-              <main className="flex-grow">
-                <AppRoutes />
-              </main>
-              <Footer />
-            </div>
-          </BrowserRouter>
+          <LanguageProvider>
+            <BrowserRouter>
+              <ScrollToTop />
+              <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased selection:bg-brand-500 selection:text-white">
+                <Navbar />
+                <main className="flex-grow">
+                  <AppRoutes />
+                </main>
+                <Footer />
+              </div>
+            </BrowserRouter>
+          </LanguageProvider>
         </LocationProvider>
       </AuthProvider>
     </ToastProvider>

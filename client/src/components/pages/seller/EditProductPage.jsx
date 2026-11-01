@@ -15,6 +15,7 @@ import {
 import axiosClient from '../../../api/axiosClient.js';
 import { useToast } from '../../../context/ToastContext.jsx';
 import ImageUploadDropzone from '../../upload/ImageUploadDropzone.jsx';
+import AiEnhanceReviewModal from '../../modals/AiEnhanceReviewModal.jsx';
 
 const EditProductPage = () => {
   const { id } = useParams();
@@ -36,6 +37,11 @@ const EditProductPage = () => {
   const [titleHi, setTitleHi] = useState('');
   const [descriptionHi, setDescriptionHi] = useState('');
   const [enhancedImages, setEnhancedImages] = useState([]);
+
+  // Phase 2 Embedded AI Listing Assistant State
+  const [isAiEnhancingAll, setIsAiEnhancingAll] = useState(false);
+  const [isAiReviewModalOpen, setIsAiReviewModalOpen] = useState(false);
+  const [aiReviewData, setAiReviewData] = useState(null);
 
   // AI Loading states
   const [isAiLoadingTitle, setIsAiLoadingTitle] = useState(false);
@@ -235,8 +241,61 @@ const EditProductPage = () => {
     }
   };
 
-  const handleRemoveFeature = (idx) => {
-    setFeatures(features.filter((_, i) => i !== idx));
+  // Master Phase 2 Embedded AI Listing Assistant Handler
+  const handleAiEnhanceAll = async () => {
+    if (!name.trim() && !description.trim() && images.length === 0) {
+      showToast('Please enter a product title, details, or upload/capture a photo first.', 'warning');
+      return;
+    }
+
+    setIsAiEnhancingAll(true);
+    try {
+      const res = await axiosClient.post('/ai/product/enhance', {
+        name: name.trim(),
+        roughDetails: description.trim(),
+        imageUrl: images[0] || null,
+        categoryId: categoryId || null,
+        productId: id
+      });
+
+      if (res.success && res.enhancedProduct) {
+        setAiReviewData({
+          ...res.enhancedProduct,
+          originalImage: images[0] || null
+        });
+        setIsAiReviewModalOpen(true);
+        showToast('AI enhancement ready! Review and apply to your product form.', 'success');
+      } else {
+        showToast('AI returned an unexpected format. You can continue updating manually.', 'info');
+      }
+    } catch (err) {
+      console.warn('AI enhancement failure:', err);
+      showToast(err.message || 'AI service is temporarily unavailable. You can continue editing manually.', 'warning');
+    } finally {
+      setIsAiEnhancingAll(false);
+    }
+  };
+
+  const handleAcceptAiReview = (approved) => {
+    if (approved.name) setName(approved.name);
+    if (approved.titleHi) setTitleHi(approved.titleHi);
+    if (approved.description) setDescription(approved.description);
+    if (approved.descriptionHi) setDescriptionHi(approved.descriptionHi);
+    if (approved.categoryId) setCategoryId(approved.categoryId);
+    if (approved.features && approved.features.length > 0) setFeatures(approved.features);
+    if (approved.tags && approved.tags.length > 0) setTags(approved.tags.join(', '));
+    if (approved.keywords && approved.keywords.length > 0) setKeywords(approved.keywords);
+    if (approved.attributes) setAttributes(approved.attributes);
+    if (approved.enhancedImage && images.length > 0) {
+      setEnhancedImages((prev) => [
+        ...prev,
+        { original: images[0], enhanced: approved.enhancedImage }
+      ]);
+      const updatedImages = [...images];
+      updatedImages[0] = approved.enhancedImage;
+      setImages(updatedImages);
+    }
+    showToast('Applied AI enhancements to form! Review, adjust price, and save changes.', 'success');
   };
 
   const handleSubmit = async (e) => {
@@ -294,13 +353,44 @@ const EditProductPage = () => {
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Catalogue</span>
         </Link>
-        <Link
-          to="/seller/ai-studio"
-          className="px-3.5 py-1.5 rounded-full bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs font-bold transition flex items-center gap-1.5 border border-purple-200"
+      </div>
+
+      {/* Master Phase 2 Embedded AI Listing Assistant Card */}
+      <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 p-5 sm:p-6 rounded-3xl text-white shadow-xl border border-purple-800/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-purple-400/30">
+              <Sparkles className="w-3 h-3 text-amber-300" />
+              Embedded Listing Assistant
+            </span>
+            <span className="text-xs text-purple-200 font-medium">• Non-Destructive Update</span>
+          </div>
+          <h3 className="text-base sm:text-lg font-bold">
+            Re-Enhance Product Listing with AI
+          </h3>
+          <p className="text-xs text-purple-200/80 max-w-xl leading-relaxed">
+            Click <strong>[ AI ENHANCE ]</strong> to automatically refresh professional titles, Hindi translations, search tags, or studio photography with an interactive review preview.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleAiEnhanceAll}
+          disabled={isAiEnhancingAll}
+          className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-amber-950 font-black text-xs sm:text-sm shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
         >
-          <Sparkles className="w-3.5 h-3.5 text-purple-600 animate-pulse" />
-          <span>Open AI Studio</span>
-        </Link>
+          {isAiEnhancingAll ? (
+            <>
+              <RefreshCw className="w-4 h-4 animate-spin text-amber-950" />
+              <span>Analyzing & Enhancing...</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 text-amber-950" />
+              <span>[ ✨ AI ENHANCE PRODUCT ]</span>
+            </>
+          )}
+        </button>
       </div>
 
       <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -702,6 +792,18 @@ const EditProductPage = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Master Phase 2 AI Enhance Review & Preview Modal */}
+      {aiReviewData && (
+        <AiEnhanceReviewModal
+          isOpen={isAiReviewModalOpen}
+          onClose={() => setIsAiReviewModalOpen(false)}
+          aiData={aiReviewData}
+          onAccept={handleAcceptAiReview}
+          onRegenerate={handleAiEnhanceAll}
+          isRegenerating={isAiEnhancingAll}
+        />
       )}
     </div>
   );

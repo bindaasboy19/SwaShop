@@ -35,7 +35,8 @@ const request = async (method, path, body = null, token = null) => {
 test.before(async () => {
   await connectDB();
   const catCount = await Category.countDocuments();
-  if (catCount === 0) {
+  const userCount = await User.countDocuments();
+  if (catCount === 0 || userCount === 0) {
     await seedDatabaseCore({ silent: true });
   }
 
@@ -45,30 +46,37 @@ test.before(async () => {
   baseUrl = `http://127.0.0.1:${port}`;
 
   // Log in as Customer
-  const custLogin = await request('POST', '/api/auth/login', {
+  let custLogin = await request('POST', '/api/auth/login', {
     email: 'customer@example.com',
     password: 'CustomerPass@123'
   });
-  customerToken = custLogin.data.token;
-  customerId = custLogin.data.user._id;
+  if (!custLogin.data?.token) {
+    await seedDatabaseCore({ silent: true });
+    custLogin = await request('POST', '/api/auth/login', {
+      email: 'customer@example.com',
+      password: 'CustomerPass@123'
+    });
+  }
+  customerToken = custLogin.data?.token;
+  customerId = custLogin.data?.user?._id;
 
   // Log in as Seller B (Ramesh Sharma)
   const sellerLogin = await request('POST', '/api/auth/login', {
     email: 'sharma.handicrafts@example.com',
     password: 'Password@123'
   });
-  sellerToken = sellerLogin.data.token;
+  sellerToken = sellerLogin.data?.token;
 
   // Find Seller B's profile ID
   const sellerBProfile = await SellerProfile.findOne({ businessName: 'Sharma Handicrafts' });
-  sellerId = sellerBProfile._id.toString();
+  sellerId = sellerBProfile?._id?.toString();
 
   // Log in as Admin
   const adminLogin = await request('POST', '/api/auth/login', {
     email: 'admin@swashop.in',
     password: 'AdminPass@12345'
   });
-  adminToken = adminLogin.data.token;
+  adminToken = adminLogin.data?.token;
 });
 
 test.after(async () => {
@@ -333,4 +341,11 @@ test('Customer CANNOT approve seller verification (403 Forbidden)', async () => 
 test('Customer CANNOT access seller private analytics (403 Forbidden)', async () => {
   const forbiddenRes = await request('GET', '/api/analytics/seller', null, customerToken);
   assert.equal(forbiddenRes.status, 403);
+});
+
+test.after(async () => {
+  if (server) {
+    await new Promise((resolve) => server.close(resolve));
+  }
+  await closeDB();
 });

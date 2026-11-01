@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UploadCloud, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { UploadCloud, X, Loader2, Image as ImageIcon, Camera } from 'lucide-react';
 import axiosClient from '../../api/axiosClient.js';
 import { useToast } from '../../context/ToastContext.jsx';
 
@@ -88,6 +88,22 @@ const ImageUploadDropzone = ({ images = [], onImagesChange, maxImages = 5 }) => 
         <p className="text-xs text-slate-500 mt-1">
           PNG, JPG, or WEBP up to 5MB each ({images.length}/{maxImages} uploaded)
         </p>
+
+        {/* Camera Capture Option */}
+        <div className="mt-3 relative z-10" onClick={(e) => e.stopPropagation()}>
+          <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-slate-300 hover:border-brand-500 text-xs font-bold text-slate-700 hover:text-brand-700 cursor-pointer shadow-xs transition">
+            <Camera className="w-3.5 h-3.5 text-brand-600" />
+            <span>Capture with Camera</span>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              disabled={isUploading}
+              onChange={(e) => handleFileUpload(e.target.files)}
+              className="hidden"
+            />
+          </label>
+        </div>
       </div>
 
       {/* Previews Grid */}

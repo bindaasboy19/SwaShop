@@ -277,3 +277,111 @@ export const getAIUsageHandler = async (req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * 11. POST /api/ai/voice-catalog
+ * Voice-first catalog generation for sellers speaking Hindi, Hinglish, or English.
+ * Extracts product title, material, features, and price with reviewable draft and graceful fallbacks.
+ */
+export const voiceCatalogHandler = async (req, res, next) => {
+  try {
+    const { spokenText, language = 'hi', categoryId } = req.body;
+    if (!spokenText || spokenText.trim().length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: 'No clear speech detected. Please speak clearly or type details manually.'
+      });
+    }
+
+    const text = spokenText.trim();
+
+    // 1. Extract price if spoken (e.g., "850 rupaye", "price 850", "₹1200", "rate 450")
+    let extractedPrice = null;
+    const priceMatch = text.match(/(?:price|kimat|rate|daam|₹|rs\.?)\s*(?:is|hai|ke|hota)?\s*(\d+)/i) ||
+                       text.match(/(\d+)\s*(?:rupaye|rupees|rs|inr)/i);
+    if (priceMatch && priceMatch[1]) {
+      extractedPrice = parseInt(priceMatch[1], 10);
+    }
+
+    // 2. Extract material
+    let extractedMaterial = null;
+    const materials = ['blue pottery', 'terracotta', 'bamboo', 'jute', 'clay', 'silk', 'brass', 'wood', 'copper', 'cotton'];
+    for (const mat of materials) {
+      if (text.toLowerCase().includes(mat)) {
+        extractedMaterial = mat.charAt(0).toUpperCase() + mat.slice(1);
+        break;
+      }
+    }
+
+    // 3. Generate structured draft using Unified Catalog Generator
+    const catalogResult = await aiService.generateUnifiedCatalog({
+      text,
+      language: language === 'hi' ? 'both' : language,
+      categoryId,
+      userId: req.user?._id
+    });
+
+    const catalog = catalogResult.catalog || {};
+
+    const voiceDraft = {
+      title: catalog.title || 'Handcrafted Artisan Product',
+      titleHi: catalog.titleHi || null,
+      description: catalog.description || text,
+      descriptionHi: catalog.descriptionHi || null,
+      price: extractedPrice || catalog.price || null,
+      material: extractedMaterial || catalog.attributes?.material || null,
+      features: catalog.features || ['Handmade authentic craft', 'Traditional Indian design', 'Artisan quality'],
+      categorySlug: catalog.categorySlug || null,
+      categoryId: catalogResult.matchedCategoryId || null,
+      tags: catalog.tags || ['handcrafted', 'artisan', 'local'],
+      attributes: {
+        ...(catalog.attributes || {}),
+        ...(extractedMaterial ? { material: extractedMaterial } : {})
+      },
+      sourceTranscript: text,
+      requiresReview: true
+    };
+
+    res.json({
+      success: true,
+      message: 'Voice catalog drafted successfully. Review before publishing.',
+      voiceDraft
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * 12. POST /api/ai/product/enhance
+ * Consolidated endpoint for Phase 2 Embedded AI Listing Assistant.
+ * Accepts rough title, rough details, image URL, categoryId and returns
+ * professional structured product content, multilingual translations,
+ * and non-destructive enhanced image.
+ */
+export const enhanceProductHandler = async (req, res, next) => {
+  try {
+    const { name, roughDetails, text, imageUrl, categoryId, productId } = req.body;
+    if (!name && !roughDetails && !text && !imageUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide rough product name, details, or an image to enhance.'
+      });
+    }
+
+    const result = await aiService.enhanceProductListing({
+      name: name || '',
+      roughDetails: roughDetails || text || '',
+      text: text || '',
+      imageUrl: imageUrl || null,
+      categoryId: categoryId || null,
+      userId: req.user?._id,
+      productId: productId || null
+    });
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+

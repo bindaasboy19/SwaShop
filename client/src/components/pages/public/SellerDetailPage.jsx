@@ -11,7 +11,8 @@ import {
   Package,
   ArrowLeft,
   Briefcase,
-  ShieldCheck
+  ShieldCheck,
+  QrCode
 } from 'lucide-react';
 import axiosClient from '../../api/axiosClient.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -19,6 +20,8 @@ import { useLocation } from '../../context/LocationContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import ProductCard from '../../marketplace/ProductCard.jsx';
 import EnquiryModal from '../../components/modals/EnquiryModal.jsx';
+import QrModal from '../../components/modals/QrModal.jsx';
+import ShopRouteMap from '../../components/common/ShopRouteMap.jsx';
 
 const SellerDetailPage = () => {
   const { id } = useParams();
@@ -32,6 +35,20 @@ const SellerDetailPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [qrData, setQrData] = useState(null);
+
+  const handleOpenStoreQr = async () => {
+    try {
+      const res = await axiosClient.get(`/qr/store/${id}`);
+      if (res && res.success) {
+        setQrData(res);
+        setIsQrModalOpen(true);
+      }
+    } catch (err) {
+      showToast('Could not load Storefront QR', 'error');
+    }
+  };
 
   useEffect(() => {
     const fetchSellerData = async () => {
@@ -152,10 +169,30 @@ const SellerDetailPage = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2.5 w-full md:w-auto">
+            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+              <a
+                href={
+                  (seller.location?.coordinates && seller.location.coordinates.length === 2 && (seller.location.coordinates[0] || seller.location.coordinates[1]))
+                    ? `https://www.google.com/maps/dir/?api=1&destination=${seller.location.coordinates[1]},${seller.location.coordinates[0]}`
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${seller.businessName} ${seller.address || ''} ${seller.city || ''} ${seller.pincode || ''}`.trim())}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5"
+              >
+                <MapPin className="w-4 h-4 text-emerald-100" />
+                <span>Get Directions</span>
+              </a>
+              <button
+                onClick={handleOpenStoreQr}
+                className="px-4 py-2.5 bg-brand-50 hover:bg-brand-100 text-brand-800 font-bold text-xs rounded-xl border border-brand-200 transition flex items-center justify-center gap-1.5"
+              >
+                <QrCode className="w-4 h-4 text-brand-600" />
+                <span>Digital Storefront QR</span>
+              </button>
               <button
                 onClick={() => setIsEnquiryModalOpen(true)}
-                className="flex-1 md:flex-initial px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2"
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2"
               >
                 <MessageSquare className="w-4 h-4 text-brand-400" />
                 <span>Contact Shop</span>
@@ -228,6 +265,14 @@ const SellerDetailPage = () => {
         </div>
       </div>
 
+      {/* Physical Track & Navigation to this Shop */}
+      <ShopRouteMap
+        shop={seller}
+        customerCoords={coords}
+        distanceKm={distanceKm}
+        onOpenChat={() => setIsEnquiryModalOpen(true)}
+      />
+
       {/* Products from this Seller */}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -257,6 +302,18 @@ const SellerDetailPage = () => {
         onClose={() => setIsEnquiryModalOpen(false)}
         seller={seller}
       />
+
+      {qrData && (
+        <QrModal
+          isOpen={isQrModalOpen}
+          onClose={() => setIsQrModalOpen(false)}
+          title="Digital Storefront QR"
+          subtitle={seller?.businessName}
+          canonicalUrl={qrData.canonicalUrl}
+          qrDataUrl={qrData.qrDataUrl}
+          whatsappUrl={qrData.whatsapp?.sellerContactUrl}
+        />
+      )}
     </div>
   );
 };

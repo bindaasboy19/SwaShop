@@ -12,18 +12,22 @@ import {
   enhanceImageHandler,
   transcribeAudioHandler,
   suggestPriceHandler,
-  getAIUsageHandler
+  getAIUsageHandler,
+  voiceCatalogHandler,
+  enhanceProductHandler
 } from '../controllers/aiController.js';
 
 const router = express.Router();
 
 // Seller-facing AI Assistant Endpoints
+router.post('/product/enhance', authenticate, requireSeller, enhanceProductHandler);
 router.post('/title', authenticate, requireSeller, generateTitleHandler);
 router.post('/description', authenticate, requireSeller, generateDescriptionHandler);
 router.post('/category', authenticate, requireSeller, suggestCategoryHandler);
 router.post('/tags', authenticate, requireSeller, generateTagsHandler);
 router.post('/attributes', authenticate, requireSeller, extractAttributesHandler);
 router.post('/catalog', authenticate, requireSeller, generateCatalogHandler);
+router.post('/voice-catalog', authenticate, requireSeller, voiceCatalogHandler);
 router.post('/image/enhance', authenticate, requireSeller, enhanceImageHandler);
 router.post('/speech/transcribe', authenticate, requireSeller, audioUpload.single('audio'), transcribeAudioHandler);
 router.post('/price/suggest', authenticate, requireSeller, suggestPriceHandler);

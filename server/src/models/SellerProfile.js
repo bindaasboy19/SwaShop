@@ -111,6 +111,34 @@ const sellerProfileSchema = new mongoose.Schema(
     isOpen: {
       type: Boolean,
       default: true
+    },
+    storeSlug: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      sparse: true
+    },
+    whatsappNumber: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    upiId: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    allowStorePickup: {
+      type: Boolean,
+      default: true
+    },
+    allowLocalDelivery: {
+      type: Boolean,
+      default: true
+    },
+    allowCourier: {
+      type: Boolean,
+      default: true
     }
   },
   {

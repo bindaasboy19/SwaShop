@@ -130,26 +130,33 @@ const ProductCard = ({ product, onSaveToggle }) => {
               </h3>
             </Link>
 
-            {/* Seller Info */}
+            {/* Shop & Location Identity */}
             {product.sellerId && (
-              <Link
-                to={`/sellers/${product.sellerId._id}`}
-                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition mt-1.5"
-              >
-                <Store className="w-3 h-3 text-slate-400 shrink-0" />
-                <span className="truncate font-medium">{product.sellerId.businessName}</span>
-                {(product.sellerId.verificationStatus === 'APPROVED' || product.sellerId.verificationStatus === 'VERIFIED') && (
-                  <span className="flex items-center gap-0.5 text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded text-[10px] font-bold" title="Verified Local Seller">
-                    <CheckCircle2 className="w-3 h-3 shrink-0" />
-                    Verified
-                  </span>
-                )}
-                {product.b2b?.enabled && (
-                  <span className="text-[10px] bg-indigo-50 text-indigo-700 font-semibold px-1.5 py-0.5 rounded" title="Bulk / B2B Available">
-                    MOQ {product.b2b.minOrderQuantity}
-                  </span>
-                )}
-              </Link>
+              <div className="mt-1.5 text-xs space-y-0.5">
+                <Link
+                  to={`/sellers/${product.sellerId._id}`}
+                  className="flex items-center gap-1.5 text-slate-800 hover:text-brand-700 font-bold transition"
+                >
+                  <Store className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                  <span className="truncate">{product.sellerId.businessName}</span>
+                  {(product.sellerId.verificationStatus === 'APPROVED' || product.sellerId.verificationStatus === 'VERIFIED') && (
+                    <span className="flex items-center gap-0.5 text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-full text-[10px] font-bold shrink-0" title="Verified Local Seller">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      Verified
+                    </span>
+                  )}
+                </Link>
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                  {product.sellerId.sellerType && (
+                    <span className="uppercase text-[9px] font-extrabold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded">
+                      {product.sellerId.sellerType.replace('_', ' ')}
+                    </span>
+                  )}
+                  {product.sellerId.city && (
+                    <span className="truncate">📍 {product.sellerId.city}</span>
+                  )}
+                </div>
+              </div>
             )}
           </div>
 

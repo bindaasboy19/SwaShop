@@ -15,12 +15,26 @@ export const getGeminiClient = () => {
     return null;
   }
   if (!geminiClient) {
-    geminiClient = new GoogleGenAI({ apiKey });
+    geminiClient = new GoogleGenAI({
+      apiKey,
+      requestOptions: { timeout_ms: 3500 }
+    });
   }
   return geminiClient;
 };
 
-const DEFAULT_MODEL = process.env.AI_MODEL || 'gemini-2.5-flash';
+const withTimeout = (promise, ms = 4000) => {
+  let timer;
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`AI Provider request timed out after ${ms}ms`)), ms);
+    if (timer && timer.unref) timer.unref();
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+};
+
+const DEFAULT_MODEL = process.env.AI_MODEL || 'gemini-3.8-flash';
 
 const SYSTEM_INSTRUCTION = `You are the AI Catalog Assistant for SwaShop, a hyperlocal Indian artisan and local commerce platform.
 CRITICAL RULES:
@@ -65,14 +79,17 @@ Generate a JSON object with this EXACT structure:
 }`;
 
   try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        responseMimeType: 'application/json'
-      }
-    });
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+          responseMimeType: 'application/json'
+        }
+      }),
+      4000
+    );
 
     const parsed = JSON.parse(response.text);
     return parsed;
@@ -93,14 +110,17 @@ export const geminiGenerateTitle = async (input, options = {}) => {
   const prompt = `Suggest a clean, compelling, and concise marketplace product title (maximum 75 characters) for: "${input.name || input.text}". Do not invent unstated features. Return JSON: { "title": "..." }`;
 
   try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        responseMimeType: 'application/json'
-      }
-    });
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+          responseMimeType: 'application/json'
+        }
+      }),
+      4000
+    );
     const parsed = JSON.parse(response.text);
     return parsed.title;
   } catch (err) {
@@ -131,14 +151,17 @@ Return JSON:
 }`;
 
   try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        responseMimeType: 'application/json'
-      }
-    });
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+          responseMimeType: 'application/json'
+        }
+      }),
+      4000
+    );
     return JSON.parse(response.text);
   } catch (err) {
     console.warn('[Gemini AI] Description generation error, falling back:', err.message);

@@ -14,7 +14,11 @@ import {
   Eye,
   Tag,
   Briefcase,
-  Clock
+  Clock,
+  QrCode,
+  MessageCircle,
+  ShoppingBag,
+  Star
 } from 'lucide-react';
 import axiosClient from '../../api/axiosClient.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -22,6 +26,9 @@ import { useLocation } from '../../context/LocationContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import BuyAndResellModal from '../../components/modals/BuyAndResellModal.jsx';
 import EnquiryModal from '../../components/modals/EnquiryModal.jsx';
+import OrderCheckoutModal from '../../components/modals/OrderCheckoutModal.jsx';
+import QrModal from '../../components/modals/QrModal.jsx';
+import ShopRouteMap from '../../components/common/ShopRouteMap.jsx';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -36,6 +43,10 @@ const ProductDetailPage = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [isResellModalOpen, setIsResellModalOpen] = useState(false);
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [qrData, setQrData] = useState(null);
+  const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -45,6 +56,13 @@ const ProductDetailPage = () => {
         if (res.success) {
           setProduct(res.product);
         }
+        // Fetch verified reviews
+        try {
+          const revRes = await axiosClient.get(`/reviews/product/${id}`);
+          if (revRes && revRes.success) {
+            setReviews(revRes.reviews || []);
+          }
+        } catch (_) {}
       } catch (err) {
         showToast(err.message || 'Product not found.', 'error');
         navigate('/explore');
@@ -55,6 +73,18 @@ const ProductDetailPage = () => {
 
     fetchProduct();
   }, [id, coords.lat, coords.lng, navigate, showToast]);
+
+  const handleOpenQr = async () => {
+    try {
+      const res = await axiosClient.get(`/qr/product/${id}`);
+      if (res && res.success) {
+        setQrData(res);
+        setIsQrModalOpen(true);
+      }
+    } catch (err) {
+      showToast('Could not load QR code', 'error');
+    }
+  };
 
   const handleToggleSave = async () => {
     if (!user) {
@@ -251,31 +281,143 @@ const ProductDetailPage = () => {
                 ))}
               </div>
             )}
+
+            {/* Prominent Shop Identity Card - Product belongs to this Physical Shop */}
+            {product.sellerId && (
+              <div className="mt-4 p-4 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 flex items-center gap-1">
+                    <Store className="w-3.5 h-3.5 text-amber-700" />
+                    The Physical Shop Behind This Product
+                  </span>
+                  <Link
+                    to={`/sellers/${product.sellerId._id}`}
+                    className="text-xs font-bold text-amber-900 hover:text-amber-950 underline"
+                  >
+                    View Storefront →
+                  </Link>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-xl border border-amber-200 overflow-hidden bg-white shrink-0 shadow-2xs">
+                    <img
+                      src={product.sellerId.logo || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200'}
+                      alt={product.sellerId.businessName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h4 className="font-extrabold text-slate-900 text-sm truncate">
+                        {product.sellerId.businessName}
+                      </h4>
+                      {(product.sellerId.verificationStatus === 'APPROVED' || product.sellerId.verificationStatus === 'VERIFIED') && (
+                        <span className="flex items-center gap-0.5 text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Verified
+                        </span>
+                      )}
+                      <span className="text-[10px] uppercase font-bold text-slate-500 bg-white/80 px-1.5 py-0.5 rounded border border-slate-200">
+                        {product.sellerId.sellerType?.replace('_', ' ') || 'Local Maker'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1 flex items-start gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-amber-700 shrink-0 mt-0.5" />
+                      <span>
+                        {product.sellerId.address ? `${product.sellerId.address}, ` : ''}
+                        {product.sellerId.city}, {product.sellerId.state} {product.sellerId.pincode}
+                      </span>
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span>Hours: {product.sellerId.businessHours || 'Open standard hours'}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Action Buttons Section */}
-          <div className="space-y-3 pt-6 border-t border-slate-100">
+          {/* Action Buttons: Physical Linkage First (Directions -> Chat -> Storefront -> Pre-reserve) */}
+          <div className="space-y-3 pt-4 border-t border-slate-100">
+            {/* Primary Physical Linkage Actions */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Enquiry Button */}
+              {/* Truthful Navigation / Get Directions */}
+              {product.sellerId && (
+                <a
+                  href={
+                    (product.sellerId.location?.coordinates && product.sellerId.location.coordinates.length === 2 && (product.sellerId.location.coordinates[0] || product.sellerId.location.coordinates[1]))
+                      ? `https://www.google.com/maps/dir/?api=1&destination=${product.sellerId.location.coordinates[1]},${product.sellerId.location.coordinates[0]}`
+                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${product.sellerId.businessName} ${product.sellerId.address || ''} ${product.sellerId.city || ''} ${product.sellerId.pincode || ''}`.trim())}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow-md hover:shadow-lg transition flex items-center justify-center gap-2"
+                >
+                  <MapPin className="w-4 h-4 text-emerald-100" />
+                  <span>Get Directions to Shop</span>
+                </a>
+              )}
+
+              {/* Contact / Chat with Shop */}
               <button
                 onClick={() => setIsEnquiryModalOpen(true)}
-                className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-sm transition flex items-center justify-center gap-2"
+                className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2"
               >
                 <MessageSquare className="w-4 h-4 text-brand-400" />
-                <span>Contact / Enquire</span>
+                <span>Contact / Chat with Shop</span>
               </button>
+            </div>
 
-              {/* Bookmark Save Button */}
+            {/* Secondary Actions: Favourites, QR Card, WhatsApp Share, View All Products */}
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={handleToggleSave}
-                className={`py-3 px-4 rounded-xl border font-bold text-sm transition flex items-center justify-center gap-2 ${
+                className={`py-2 px-2.5 rounded-xl border font-bold text-xs transition flex items-center justify-center gap-1.5 ${
                   isSaved
                     ? 'border-rose-300 bg-rose-50 text-rose-700'
                     : 'border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <Heart className={`w-4 h-4 ${isSaved ? 'fill-rose-600 text-rose-600' : 'text-slate-400'}`} />
-                <span>{isSaved ? 'Saved in Favourites' : 'Save Product'}</span>
+                <Heart className={`w-3.5 h-3.5 ${isSaved ? 'fill-rose-600 text-rose-600' : 'text-slate-400'}`} />
+                <span className="truncate">{isSaved ? 'Saved' : 'Save'}</span>
+              </button>
+
+              <button
+                onClick={handleOpenQr}
+                className="py-2 px-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition flex items-center justify-center gap-1.5"
+              >
+                <QrCode className="w-3.5 h-3.5 text-brand-600" />
+                <span>QR Card</span>
+              </button>
+
+              <a
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Check out "${product.name}" from ${product.sellerId?.businessName || 'local shop'} on SwaShop: ${window.location.href}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2 px-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs hover:bg-emerald-100 transition flex items-center justify-center gap-1.5"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                <span>WhatsApp</span>
+              </a>
+            </div>
+
+            {/* Optional Pre-reserve / Direct Local Order (Secondary to physical visit) */}
+            <div className="pt-2 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100">
+              <span>Planning to visit offline or prefer local delivery?</span>
+              <button
+                onClick={() => {
+                  if (!user) {
+                    showToast('Please sign in to place an order or pre-reserve', 'info');
+                    navigate('/login');
+                    return;
+                  }
+                  setIsOrderModalOpen(true);
+                }}
+                className="font-bold text-brand-700 hover:text-brand-800 underline flex items-center gap-1"
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Pre-reserve / Inquire Order</span>
               </button>
             </div>
 
@@ -303,45 +445,59 @@ const ProductDetailPage = () => {
         </div>
       </div>
 
-      {/* Seller Identity & Location Card */}
+      {/* Physical Track & Navigation to the Shop */}
       {product.sellerId && (
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl border border-slate-200 overflow-hidden bg-slate-100 shrink-0">
-              <img
-                src={product.sellerId.logo || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200'}
-                alt={product.sellerId.businessName}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-slate-900 text-lg">{product.sellerId.businessName}</h3>
-                {(product.sellerId.verificationStatus === 'APPROVED' || product.sellerId.verificationStatus === 'VERIFIED') && (
-                  <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-xs font-bold border border-emerald-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    Verified Maker
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {product.sellerId.address ? `${product.sellerId.address}, ` : ''}
-                {product.sellerId.city}, {product.sellerId.state}
-              </p>
-              <p className="text-xs text-slate-400 mt-1">Hours: {product.sellerId.businessHours || 'Open standard hours'}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <Link
-              to={`/sellers/${product.sellerId._id}`}
-              className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs text-center transition"
-            >
-              View Shop Profile & All Products
-            </Link>
-          </div>
-        </div>
+        <ShopRouteMap
+          shop={product.sellerId}
+          customerCoords={coords}
+          distanceKm={product.distanceKm}
+          onOpenChat={() => setIsEnquiryModalOpen(true)}
+          productName={product.name}
+        />
       )}
+
+      {/* Verified Reviews Section */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div>
+            <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+              <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+              Verified Buyer Reviews & Ratings ({reviews.length})
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">Reviews submitted exclusively by verified purchasers.</p>
+          </div>
+          {product.ratings?.average && (
+            <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
+              <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+              <span className="text-sm font-extrabold text-amber-900">{product.ratings.average.toFixed(1)} / 5</span>
+            </div>
+          )}
+        </div>
+
+        {reviews.length === 0 ? (
+          <p className="text-xs text-slate-400 py-4 text-center italic">
+            No reviews yet for this product. Be the first to order and share your feedback!
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+            {reviews.map((rev) => (
+              <div key={rev._id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-800">{rev.reviewerId?.name || 'Verified Buyer'}</span>
+                  <div className="flex text-amber-400">
+                    {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">{rev.comment}</p>
+                <div className="flex items-center gap-1 text-[10px] text-emerald-700 font-semibold">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  Verified Purchase
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Modals */}
       {canResell && (
@@ -358,6 +514,25 @@ const ProductDetailPage = () => {
         seller={product.sellerId}
         product={product}
       />
+
+      <OrderCheckoutModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        product={product}
+        seller={product.sellerId}
+      />
+
+      {qrData && (
+        <QrModal
+          isOpen={isQrModalOpen}
+          onClose={() => setIsQrModalOpen(false)}
+          title="Product QR Card"
+          subtitle={product.name}
+          canonicalUrl={qrData.canonicalUrl}
+          qrDataUrl={qrData.qrDataUrl}
+          whatsappUrl={qrData.whatsapp?.shareUrl}
+        />
+      )}
     </div>
   );
 };

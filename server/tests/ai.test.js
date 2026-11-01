@@ -261,3 +261,34 @@ test('Search ranks products with AI keywords and quality score', async () => {
   assert.ok(res.data.products.length >= 1);
   assert.ok(res.data.products[0].searchRelevanceScore !== undefined);
 });
+
+test('Seller can call consolidated POST /api/ai/product/enhance with rough name and details', async () => {
+  const res = await request(
+    'POST',
+    '/api/ai/product/enhance',
+    {
+      name: 'bamboo basket',
+      roughDetails: 'handmade bamboo basket for kitchen fruit storage durable eco friendly',
+      imageUrl: 'https://images.unsplash.com/photo-1590736969955-71cc94801759?w=800'
+    },
+    sellerToken
+  );
+
+  assert.equal(res.status, 200);
+  assert.equal(res.data.success, true);
+  assert.ok(res.data.enhancedProduct);
+  assert.ok(res.data.enhancedProduct.name);
+  assert.ok(res.data.enhancedProduct.description);
+  assert.ok(res.data.enhancedProduct.features.length >= 1);
+  assert.ok(res.data.enhancedProduct.tags.length >= 1);
+  assert.ok(res.data.enhancedProduct.enhancedImage);
+  assert.ok(res.data.aiMetadata);
+  assert.equal(res.data.aiMetadata.imageEnhancementStatus, 'ENHANCED');
+});
+
+test.after(async () => {
+  if (server) {
+    await new Promise((resolve) => server.close(resolve));
+  }
+  await closeDB();
+});

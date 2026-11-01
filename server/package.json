@@ -9,9 +9,10 @@
     "dev": "node --watch src/server.js",
     "seed": "node src/seeds/seedData.js",
     "seed:admin": "node src/seeds/seedAdmin.js",
-    "test": "node --test tests/api.test.js && node --test tests/ai.test.js && node --test tests/phase3.test.js",
+    "test": "node --test tests/api.test.js && node --test tests/ai.test.js && node --test tests/phase3.test.js && node --test tests/phase4.test.js",
     "test:ai": "node --test tests/ai.test.js",
-    "test:phase3": "node --test tests/phase3.test.js"
+    "test:phase3": "node --test tests/phase3.test.js",
+    "test:phase4": "node --test tests/phase4.test.js"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

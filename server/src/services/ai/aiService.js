@@ -50,7 +50,7 @@ export const generateTitle = async ({ name, text, userId, productId }) => {
   const start = Date.now();
   let title = null;
   let provider = 'gemini';
-  let model = process.env.AI_MODEL || 'gemini-2.5-flash';
+  let model = process.env.AI_MODEL || 'gemini-3.8-flash';
 
   try {
     title = await geminiGenerateTitle({ name, text });
@@ -100,7 +100,7 @@ export const generateDescription = async ({ name, details, text, language = 'en'
   const start = Date.now();
   let result = null;
   let provider = 'gemini';
-  let model = process.env.AI_MODEL || 'gemini-2.5-flash';
+  let model = process.env.AI_MODEL || 'gemini-3.8-flash';
 
   try {
     result = await geminiGenerateDescription({ name, details, text }, { language });
@@ -222,7 +222,7 @@ export const extractAttributes = async ({ name, description, text, userId, produ
 export const generateUnifiedCatalog = async ({ text, language = 'en', categoryId = null, userId, productId }) => {
   const start = Date.now();
   let provider = 'gemini';
-  let model = process.env.AI_MODEL || 'gemini-2.5-flash';
+  let model = process.env.AI_MODEL || 'gemini-3.8-flash';
 
   const dbCategories = await Category.find({ isActive: true }).select('_id name slug');
 
@@ -392,7 +392,67 @@ export const calculatePriceRecommendation = async ({ costData, categorySlug = ''
 };
 
 /**
- * 10. Admin AI Telemetry & Usage Analytics
+ * 10. Consolidated AI Product Enhancement (Phase 2 Master Rebuild)
+ * Analyzes rough product name + rough details + image + categoryId
+ * Returns professional title (en/hi), professional description (en/hi),
+ * structured bullet features, attributes, tags, search keywords,
+ * suggested category, and non-destructive image enhancement.
+ */
+export const enhanceProductListing = async ({ name, roughDetails, text, imageUrl, categoryId, userId, productId }) => {
+  const combinedText = [name, roughDetails || text].filter(Boolean).join('. ');
+  if (!combinedText || combinedText.trim().length < 2) {
+    throw new Error('Please provide at least a rough product name or details to enhance.');
+  }
+
+  // 1. Generate unified structured text catalog
+  const catalogRes = await generateUnifiedCatalog({
+    text: combinedText,
+    language: 'both',
+    categoryId,
+    userId,
+    productId
+  });
+
+  const cat = catalogRes.success ? catalogRes.catalog : {};
+
+  // 2. Enhance image if provided
+  let imageResult = null;
+  if (imageUrl) {
+    try {
+      imageResult = await enhanceImage({ imageUrl, userId, productId });
+    } catch (imgErr) {
+      console.warn('[AI Enhance Product] Image enhancement skipped or failed:', imgErr.message);
+    }
+  }
+
+  return {
+    success: true,
+    provider: catalogRes.provider || 'fallback',
+    enhancedProduct: {
+      name: cat.title || name,
+      titleHi: cat.titleHi || '',
+      description: cat.description || roughDetails || '',
+      descriptionHi: cat.descriptionHi || '',
+      categoryId: cat.categoryId || categoryId,
+      categorySlug: cat.categorySlug || '',
+      categoryName: cat.categoryName || '',
+      features: cat.features || [],
+      attributes: cat.attributes || {},
+      tags: cat.tags || [],
+      keywords: cat.keywords || [],
+      originalImage: imageUrl || null,
+      enhancedImage: imageResult?.enhanced || imageUrl || null
+    },
+    aiMetadata: {
+      provider: catalogRes.provider || 'fallback',
+      enhancedAt: new Date(),
+      imageEnhancementStatus: imageResult?.success ? 'ENHANCED' : (imageUrl ? 'ORIGINAL_PRESERVED' : 'NONE')
+    }
+  };
+};
+
+/**
+ * 11. Admin AI Telemetry & Usage Analytics
  */
 export const getAIUsageStats = async () => {
   const totalCalls = await AIUsage.countDocuments();
@@ -436,6 +496,7 @@ const aiService = {
   enhanceImage,
   transcribeAudio,
   calculatePriceRecommendation,
+  enhanceProductListing,
   getAIUsageStats
 };
 

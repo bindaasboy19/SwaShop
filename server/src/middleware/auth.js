@@ -86,3 +86,6 @@ export const optionalAuth = async (req, res, next) => {
     next();
   }
 };
+
+export const requireAuth = authenticate;
+

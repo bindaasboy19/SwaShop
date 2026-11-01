@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   PlusCircle,
@@ -14,12 +14,15 @@ import {
   Layers,
   FileText,
   Mic,
+  MicOff,
   Image as ImageIcon,
-  CheckCircle2
+  CheckCircle2,
+  Volume2
 } from 'lucide-react';
 import axiosClient from '../../../api/axiosClient.js';
 import { useToast } from '../../../context/ToastContext.jsx';
 import ImageUploadDropzone from '../../upload/ImageUploadDropzone.jsx';
+import AiEnhanceReviewModal from '../../modals/AiEnhanceReviewModal.jsx';
 
 const AddProductPage = () => {
   const routerLocation = useLocation();
@@ -35,6 +38,13 @@ const AddProductPage = () => {
   const [tags, setTags] = useState(prefill?.tags || '');
   const [images, setImages] = useState(prefill?.images || []);
 
+  // Phase 4 Voice-First Cataloging
+  const [isRecording, setIsRecording] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [voiceLang, setVoiceLang] = useState('hi-IN');
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const recognitionRef = useRef(null);
+
   // Phase 2 AI Fields
   const [features, setFeatures] = useState(prefill?.features || []);
   const [newFeatureInput, setNewFeatureInput] = useState('');
@@ -43,6 +53,11 @@ const AddProductPage = () => {
   const [titleHi, setTitleHi] = useState(prefill?.multilingual?.title?.hi || '');
   const [descriptionHi, setDescriptionHi] = useState(prefill?.multilingual?.description?.hi || '');
   const [enhancedImages, setEnhancedImages] = useState([]);
+
+  // Phase 2 Embedded AI Listing Assistant State
+  const [isAiEnhancingAll, setIsAiEnhancingAll] = useState(false);
+  const [isAiReviewModalOpen, setIsAiReviewModalOpen] = useState(false);
+  const [aiReviewData, setAiReviewData] = useState(null);
 
   // AI Loading states for inline buttons
   const [isAiLoadingTitle, setIsAiLoadingTitle] = useState(false);
@@ -66,6 +81,104 @@ const AddProductPage = () => {
   const [error, setError] = useState('');
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  // Initialize Web Speech API
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = voiceLang;
+
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setVoiceTranscript(transcript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+        if (event.error === 'not-allowed') {
+          showToast('Microphone permission denied. You can still type your notes.', 'warning');
+        }
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, [voiceLang]);
+
+  const toggleRecording = () => {
+    if (!recognitionRef.current) {
+      showToast('Speech recognition not supported in this browser. Please use text input.', 'info');
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+      showToast('Recording stopped. Ready to interpret.', 'info');
+    } else {
+      setVoiceTranscript('');
+      recognitionRef.current.lang = voiceLang;
+      try {
+        recognitionRef.current.start();
+        setIsRecording(true);
+        showToast(`Listening in ${voiceLang === 'hi-IN' ? 'Hindi (हिंदी)' : 'English'}... Speak naturally.`, 'info');
+      } catch (err) {
+        console.error('Start recognition error:', err);
+      }
+    }
+  };
+
+  const handleProcessVoiceCatalog = async (customText = null) => {
+    const textToProcess = (customText || voiceTranscript).trim();
+    if (!textToProcess) {
+      showToast('Please record audio or enter product description notes.', 'warning');
+      return;
+    }
+
+    setIsProcessingVoice(true);
+    try {
+      const res = await axiosClient.post('/ai/voice-catalog', {
+        audioText: textToProcess,
+        language: voiceLang === 'hi-IN' ? 'hi' : 'en'
+      });
+
+      if (res.success && res.catalog) {
+        const cat = res.catalog;
+        if (cat.name) setName(cat.name);
+        if (cat.titleHi) setTitleHi(cat.titleHi);
+        if (cat.description) setDescription(cat.description);
+        if (cat.descriptionHi) setDescriptionHi(cat.descriptionHi);
+        if (cat.price && cat.price > 0) setPrice(String(cat.price));
+        if (cat.features && Array.isArray(cat.features)) setFeatures(cat.features);
+        if (cat.tags && Array.isArray(cat.tags)) setTags(cat.tags.join(', '));
+
+        // Match category if suggested
+        if (cat.suggestedCategory && categories.length > 0) {
+          const matched = categories.find(
+            (c) => c.name.toLowerCase().includes(cat.suggestedCategory.toLowerCase()) ||
+                   cat.suggestedCategory.toLowerCase().includes(c.name.toLowerCase())
+          );
+          if (matched) setCategoryId(matched._id);
+        }
+
+        showToast('Voice interpreted! Product details pre-filled. Please review before publishing.', 'success');
+      }
+    } catch (err) {
+      showToast(err.message || 'Voice catalog processing failed.', 'error');
+    } finally {
+      setIsProcessingVoice(false);
+    }
+  };
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -99,6 +212,62 @@ const AddProductPage = () => {
   };
 
   const completeness = calculateCompleteness();
+
+  // Master Phase 2 Embedded AI Listing Assistant Handler
+  const handleAiEnhanceAll = async () => {
+    if (!name.trim() && !description.trim() && images.length === 0) {
+      showToast('Please enter a rough product name, details, or upload/capture a photo first.', 'warning');
+      return;
+    }
+
+    setIsAiEnhancingAll(true);
+    try {
+      const res = await axiosClient.post('/ai/product/enhance', {
+        name: name.trim(),
+        roughDetails: description.trim(),
+        imageUrl: images[0] || null,
+        categoryId: categoryId || null
+      });
+
+      if (res.success && res.enhancedProduct) {
+        setAiReviewData({
+          ...res.enhancedProduct,
+          originalImage: images[0] || null
+        });
+        setIsAiReviewModalOpen(true);
+        showToast('AI enhancement ready! Review and apply to your product form.', 'success');
+      } else {
+        showToast('AI returned an unexpected format. You can continue filling details manually.', 'info');
+      }
+    } catch (err) {
+      console.warn('AI enhancement failure:', err);
+      showToast(err.message || 'AI service is temporarily unavailable. You can continue manually without interruption.', 'warning');
+    } finally {
+      setIsAiEnhancingAll(false);
+    }
+  };
+
+  const handleAcceptAiReview = (approved) => {
+    if (approved.name) setName(approved.name);
+    if (approved.titleHi) setTitleHi(approved.titleHi);
+    if (approved.description) setDescription(approved.description);
+    if (approved.descriptionHi) setDescriptionHi(approved.descriptionHi);
+    if (approved.categoryId) setCategoryId(approved.categoryId);
+    if (approved.features && approved.features.length > 0) setFeatures(approved.features);
+    if (approved.tags && approved.tags.length > 0) setTags(approved.tags.join(', '));
+    if (approved.keywords && approved.keywords.length > 0) setKeywords(approved.keywords);
+    if (approved.attributes) setAttributes(approved.attributes);
+    if (approved.enhancedImage && images.length > 0) {
+      setEnhancedImages((prev) => [
+        ...prev,
+        { original: images[0], enhanced: approved.enhancedImage }
+      ]);
+      const updatedImages = [...images];
+      updatedImages[0] = approved.enhancedImage;
+      setImages(updatedImages);
+    }
+    showToast('Applied AI enhancements to form! Review, adjust price, and publish.', 'success');
+  };
 
   // 1. Quick AI Title Suggestion
   const handleAiSuggestTitle = async () => {
@@ -366,6 +535,151 @@ const AddProductPage = () => {
           <span>{error}</span>
         </div>
       )}
+
+      {/* Phase 4 Voice-First Cataloging Card */}
+      <div className="bg-gradient-to-r from-rose-500 via-pink-600 to-purple-600 rounded-3xl p-6 sm:p-7 text-white shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 backdrop-blur-xs">
+                <Mic className="w-3 h-3 text-amber-300" />
+                Phase 4 Voice-First Listing
+              </span>
+              <span className="text-xs text-rose-100 font-semibold">• Multilingual Voice Assistant</span>
+            </div>
+            <h2 className="text-xl font-bold tracking-tight">
+              Speak Naturally to Digitize Your Product
+            </h2>
+            <p className="text-xs text-rose-100 max-w-xl leading-relaxed">
+              Tap the microphone and describe your item in Hindi or English (e.g., craft material, features, price). AI will automatically structure your catalog for you to review.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <select
+              value={voiceLang}
+              onChange={(e) => setVoiceLang(e.target.value)}
+              className="px-3 py-2 rounded-xl bg-white/20 text-white text-xs font-bold border border-white/20 outline-none backdrop-blur-xs cursor-pointer"
+            >
+              <option value="hi-IN" className="text-slate-800">Hindi (हिंदी)</option>
+              <option value="en-IN" className="text-slate-800">English (India)</option>
+            </select>
+
+            <button
+              type="button"
+              onClick={toggleRecording}
+              className={`px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-2 ${
+                isRecording
+                  ? 'bg-rose-900 text-white animate-pulse border-2 border-white'
+                  : 'bg-white text-rose-700 hover:bg-rose-50'
+              }`}
+            >
+              {isRecording ? <MicOff className="w-4 h-4 text-rose-200" /> : <Mic className="w-4 h-4 text-rose-600" />}
+              <span>{isRecording ? 'Listening... Tap to Stop' : 'Start Speaking'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Live Speech or Input Box */}
+        <div className="space-y-3 pt-2 border-t border-white/20">
+          <div className="relative">
+            <textarea
+              rows={2}
+              value={voiceTranscript}
+              onChange={(e) => setVoiceTranscript(e.target.value)}
+              placeholder={
+                isRecording
+                  ? 'Listening to your voice... Speak about your product, features, and price.'
+                  : 'Or type/paste your spoken voice notes here (e.g. "Ye blue pottery ka handmade vase hai. Price 850 rupaye hai")...'
+              }
+              className="w-full p-3 rounded-2xl bg-black/20 text-white placeholder-rose-200/70 border border-white/20 text-xs outline-none focus:border-white transition"
+            />
+            {isRecording && (
+              <span className="absolute top-3 right-3 flex items-center gap-1.5 text-[10px] font-bold text-amber-300">
+                <span className="w-2 h-2 rounded-full bg-red-400 animate-ping" />
+                LIVE MIC
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Sample clickable speech chips */}
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+              <span className="text-rose-200 font-semibold mr-1">Try sample:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const sample = "Ye blue pottery ka handmade vase hai. Isme traditional design hai. Ghar ki decoration ke liye hai aur iska price 850 rupaye hai.";
+                  setVoiceTranscript(sample);
+                  handleProcessVoiceCatalog(sample);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/15 transition text-left text-[10px]"
+              >
+                🏺 Blue Pottery Vase (₹850)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const sample = "Assam authentic handmade bamboo tea tray with waterproof polish. Ideal for kitchen serving, price 650 rupees.";
+                  setVoiceTranscript(sample);
+                  handleProcessVoiceCatalog(sample);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/15 transition text-left text-[10px]"
+              >
+                🎋 Bamboo Tray (₹650)
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleProcessVoiceCatalog()}
+              disabled={isProcessingVoice || !voiceTranscript.trim()}
+              className="px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs shadow-md transition flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
+            >
+              {isProcessingVoice ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-900" />}
+              <span>{isProcessingVoice ? 'Interpreting Voice...' : 'Interpret Voice & Fill Form'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Master Phase 2 Embedded AI Listing Assistant Card */}
+      <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 p-5 sm:p-6 rounded-3xl text-white shadow-xl border border-purple-800/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-purple-400/30">
+              <Sparkles className="w-3 h-3 text-amber-300" />
+              Embedded Listing Assistant
+            </span>
+            <span className="text-xs text-purple-200 font-medium">• Review Before Publishing</span>
+          </div>
+          <h3 className="text-base sm:text-lg font-bold">
+            Auto-Enhance Product Listing with AI
+          </h3>
+          <p className="text-xs text-purple-200/80 max-w-xl leading-relaxed">
+            Enter rough details or take a quick photo below, then click <strong>[ AI ENHANCE ]</strong>. AI will generate high-conversion titles, descriptions, Hindi translations, keywords, and cleaned photography with a preview modal.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleAiEnhanceAll}
+          disabled={isAiEnhancingAll}
+          className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-amber-950 font-black text-xs sm:text-sm shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+        >
+          {isAiEnhancingAll ? (
+            <>
+              <RefreshCw className="w-4 h-4 animate-spin text-amber-950" />
+              <span>Analyzing & Enhancing...</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 text-amber-950" />
+              <span>[ ✨ AI ENHANCE PRODUCT ]</span>
+            </>
+          )}
+        </button>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Basic Details Card */}
@@ -800,6 +1114,18 @@ const AddProductPage = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Master Phase 2 AI Enhance Review & Preview Modal */}
+      {aiReviewData && (
+        <AiEnhanceReviewModal
+          isOpen={isAiReviewModalOpen}
+          onClose={() => setIsAiReviewModalOpen(false)}
+          aiData={aiReviewData}
+          onAccept={handleAcceptAiReview}
+          onRegenerate={handleAiEnhanceAll}
+          isRegenerating={isAiEnhancingAll}
+        />
       )}
     </div>
   );

@@ -64,6 +64,18 @@ const userSchema = new mongoose.Schema(
         enum: ['UNVERIFIED', 'PENDING', 'VERIFIED'],
         default: 'UNVERIFIED'
       }
+    },
+    preferredLanguage: {
+      type: String,
+      enum: ['en', 'hi', 'bn', 'ta', 'te', 'mr', 'gu', 'pa'],
+      default: 'en'
+    },
+    notificationPreferences: {
+      enquiries: { type: Boolean, default: true },
+      orders: { type: Boolean, default: true },
+      b2b: { type: Boolean, default: true },
+      marketInsights: { type: Boolean, default: true },
+      promotions: { type: Boolean, default: false }
     }
   },
   {

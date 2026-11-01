@@ -283,3 +283,10 @@ test('Seller as Customer: Seller can send enquiry and save items without logging
   assert.equal(enqRes.status, 201);
   assert.equal(enqRes.data.success, true);
 });
+
+test.after(async () => {
+  if (server) {
+    await new Promise((resolve) => server.close(resolve));
+  }
+  await closeDB();
+});
