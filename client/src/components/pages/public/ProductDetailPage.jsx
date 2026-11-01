@@ -361,11 +361,18 @@ const ProductDetailPage = () => {
 
               {/* Contact / Chat with Shop */}
               <button
-                onClick={() => setIsEnquiryModalOpen(true)}
+                onClick={() => {
+                  if (!user) {
+                    showToast('Please sign in to chat with the shop.', 'info');
+                    navigate(`/login?redirect=/products/${product._id}`);
+                    return;
+                  }
+                  navigate(`/chat?sellerId=${product.sellerId._id}&productId=${product._id}`);
+                }}
                 className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2"
               >
                 <MessageSquare className="w-4 h-4 text-brand-400" />
-                <span>Contact / Chat with Shop</span>
+                <span>Chat with Shop</span>
               </button>
             </div>
 
@@ -451,7 +458,14 @@ const ProductDetailPage = () => {
           shop={product.sellerId}
           customerCoords={coords}
           distanceKm={product.distanceKm}
-          onOpenChat={() => setIsEnquiryModalOpen(true)}
+          onOpenChat={() => {
+            if (!user) {
+              showToast('Please sign in to chat with the shop.', 'info');
+              navigate(`/login?redirect=/products/${product._id}`);
+              return;
+            }
+            navigate(`/chat?sellerId=${product.sellerId._id}&productId=${product._id}`);
+          }}
           productName={product.name}
         />
       )}

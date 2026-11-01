@@ -167,6 +167,15 @@ const Navbar = () => {
                     <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
                     Enquiries
                   </Link>
+                  <Link
+                    to="/chat"
+                    className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1 ${
+                      isActive('/chat') ? 'text-brand-600 bg-brand-50 font-semibold' : 'hover:text-brand-600'
+                    }`}
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                    Chat
+                  </Link>
                 </>
               )}
 
@@ -302,6 +311,10 @@ const Navbar = () => {
                         <MessageSquare className="w-4 h-4 text-blue-500" />
                         My Sent Enquiries
                       </Link>
+                      <Link to="/chat" className="flex items-center gap-2.5 px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
+                        <MessageSquare className="w-4 h-4 text-emerald-600" />
+                        Messages & Chat
+                      </Link>
 
                       <div className="border-t border-slate-100 my-1"></div>
                       <button
@@ -424,6 +437,10 @@ const Navbar = () => {
                   </Link>
                   <Link to="/customer/enquiries" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-slate-50">
                     My Sent Enquiries
+                  </Link>
+                  <Link to="/chat" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-slate-50 flex items-center gap-2 font-semibold text-emerald-700">
+                    <MessageSquare className="w-4 h-4 text-emerald-600" />
+                    <span>Messages & Chat</span>
                   </Link>
                   <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="text-left px-3 py-2 rounded-lg text-rose-600 font-semibold">
                     Sign Out

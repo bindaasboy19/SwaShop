@@ -332,7 +332,7 @@ const SellerSettingsPage = () => {
                 <span>B2B Wholesale & Institutional Supply</span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Enable your workshop to receive direct bulk orders and procurement RFPs
+                Enable your shop to receive direct bulk orders and wholesale requirements
               </p>
             </div>
             <button

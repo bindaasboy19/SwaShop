@@ -184,10 +184,10 @@ const ExplorePage = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Smart Market Linkage & Discovery
+              Explore Local Products & Shops
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-brand-100 text-brand-800 border border-brand-200">
-              Phase 3 Engine
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+              Live Local Stock
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 flex items-center gap-1.5">

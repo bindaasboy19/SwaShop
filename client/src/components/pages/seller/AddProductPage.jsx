@@ -543,7 +543,7 @@ const AddProductPage = () => {
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 backdrop-blur-xs">
                 <Mic className="w-3 h-3 text-amber-300" />
-                Phase 4 Voice-First Listing
+                Voice Product Listing
               </span>
               <span className="text-xs text-rose-100 font-semibold">• Multilingual Voice Assistant</span>
             </div>

@@ -16,6 +16,7 @@ import OrdersPage from '../components/pages/public/OrdersPage.jsx';
 import SavedItemsPage from '../components/pages/customer/SavedItemsPage.jsx';
 import CustomerEnquiriesPage from '../components/pages/customer/CustomerEnquiriesPage.jsx';
 import CustomerProfilePage from '../components/pages/customer/CustomerProfilePage.jsx';
+import ChatPage from '../components/pages/chat/ChatPage.jsx';
 
 // B2B Market Linkage Pages
 import B2BHubPage from '../components/pages/b2b/B2BHubPage.jsx';
@@ -116,6 +117,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['CUSTOMER']}>
             <CustomerEnquiriesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute allowedRoles={['CUSTOMER', 'SELLER']}>
+            <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/messages"
+        element={
+          <ProtectedRoute allowedRoles={['CUSTOMER', 'SELLER']}>
+            <ChatPage />
           </ProtectedRoute>
         }
       />

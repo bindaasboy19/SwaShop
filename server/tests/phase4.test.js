@@ -83,12 +83,6 @@ test.before(async () => {
   sampleProductId = prod ? prod._id.toString() : null;
 });
 
-test.after(async () => {
-  if (server) {
-    await new Promise((resolve) => server.close(resolve));
-  }
-  await closeDB();
-});
 
 test('Health and Readiness APIs return startup scale status', async () => {
   const healthRes = await request('GET', '/api/health');
@@ -348,6 +342,9 @@ test('Operational Moderation Report and Immutable Audit Log trail', async () => 
 
 test.after(async () => {
   if (server) {
+    if (typeof server.closeAllConnections === 'function') {
+      server.closeAllConnections();
+    }
     await new Promise((resolve) => server.close(resolve));
   }
   await closeDB();

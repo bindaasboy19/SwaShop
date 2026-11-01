@@ -22,6 +22,7 @@ import qrRoutes from './routes/qrRoutes.js';
 import recommendationRoutes from './routes/recommendationRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import moderationRoutes from './routes/moderationRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 import mongoose from 'mongoose';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
@@ -47,7 +48,8 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     app: 'SwaShop API',
-    phase: 'Phase 4 - Production + Startup Scale Layer',
+    version: '1.0.0',
+    phase: 'Phase 4 (Startup Scale)',
     timestamp: new Date().toISOString()
   });
 });
@@ -81,6 +83,7 @@ app.use('/api/qr', qrRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/moderation', moderationRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Error Handling
 app.use(notFoundHandler);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   MapPin,
   Clock,
@@ -28,6 +28,7 @@ const SellerDetailPage = () => {
   const { user } = useAuth();
   const { coords } = useLocation();
   const { showToast } = useToast();
+  const navigate = useNavigate();
 
   const [seller, setSeller] = useState(null);
   const [products, setProducts] = useState([]);
@@ -191,11 +192,18 @@ const SellerDetailPage = () => {
                 <span>Digital Storefront QR</span>
               </button>
               <button
-                onClick={() => setIsEnquiryModalOpen(true)}
+                onClick={() => {
+                  if (!user) {
+                    showToast('Please sign in to chat with the shop.', 'info');
+                    navigate(`/login?redirect=/sellers/${id}`);
+                    return;
+                  }
+                  navigate(`/chat?sellerId=${id}`);
+                }}
                 className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2"
               >
                 <MessageSquare className="w-4 h-4 text-brand-400" />
-                <span>Contact Shop</span>
+                <span>Chat with Shop</span>
               </button>
               <button
                 onClick={handleToggleSave}
@@ -258,7 +266,7 @@ const SellerDetailPage = () => {
                 to={`/b2b/requirements/new?category=${encodeURIComponent(seller.category || 'Handicrafts & Bamboo')}`}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition shrink-0"
               >
-                Post Custom B2B RFP
+                Send Bulk Enquiry
               </Link>
             </div>
           )}
@@ -270,7 +278,14 @@ const SellerDetailPage = () => {
         shop={seller}
         customerCoords={coords}
         distanceKm={distanceKm}
-        onOpenChat={() => setIsEnquiryModalOpen(true)}
+        onOpenChat={() => {
+          if (!user) {
+            showToast('Please sign in to chat with the shop.', 'info');
+            navigate(`/login?redirect=/sellers/${id}`);
+            return;
+          }
+          navigate(`/chat?sellerId=${id}`);
+        }}
       />
 
       {/* Products from this Seller */}

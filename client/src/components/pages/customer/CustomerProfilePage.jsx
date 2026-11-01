@@ -135,7 +135,7 @@ const CustomerProfilePage = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs">
           <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 space-y-1">
-            <span className="font-bold text-white block">Post Custom RFPs</span>
+            <span className="font-bold text-white block">Post Bulk Requirements</span>
             <span className="text-indigo-200">Submit requests for custom quantities, corporate branding, or bespoke artisan craft lines.</span>
           </div>
           <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 space-y-1">

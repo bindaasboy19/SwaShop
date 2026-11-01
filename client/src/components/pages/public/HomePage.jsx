@@ -256,7 +256,7 @@ const HomePage = () => {
               Empowering Artisans, Connecting Resellers, Serving Customers
             </h2>
             <p className="text-sm text-slate-300 leading-relaxed">
-              Phase 1 establishes the foundational marketplace where makers create products, sellers can acquire and resell items from other shops, and customers discover nearby treasures.
+              SwaShop connects local artisans and neighborhood shops directly with nearby customers to discover products, check real stock, and visit the physical store in person.
             </p>
           </div>
 

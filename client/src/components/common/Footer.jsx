@@ -75,7 +75,7 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} SwaShop Platform. Phase 1 Production Foundation.</p>
+          <p>© {new Date().getFullYear()} SwaShop. Empowering Local Shops, Artisans & Nearby Discovery.</p>
           <div className="flex items-center gap-6">
             <span>Customer Discovery</span>
             <span>•</span>

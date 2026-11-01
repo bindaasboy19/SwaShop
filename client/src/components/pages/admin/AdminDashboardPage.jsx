@@ -99,7 +99,7 @@ const AdminDashboardPage = () => {
             SwaShop Master Operations Console
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 max-w-xl">
-            Real-time telemetry, user moderation, merchant verification, category controls, and admin management.
+            Platform operations, user moderation, merchant verification, category controls, and admin management.
           </p>
         </div>
 
@@ -253,7 +253,7 @@ const AdminDashboardPage = () => {
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-purple-600" />
-                  Phase 2 AI Telemetry
+                  AI Assistant Activity & Health
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
                   {aiStats.successRate}% Success Rate
@@ -263,7 +263,7 @@ const AdminDashboardPage = () => {
                 Seller AI Platform Operations & Usage Audit
               </h2>
               <p className="text-xs text-slate-500">
-                Live monitoring of Gemini 2.5 Flash, Cloudinary AI Transformations, and Local Fallback Engines.
+                Live monitoring of AI Assistant operations, image transformations, and fallback engine.
               </p>
             </div>
 

@@ -408,11 +408,11 @@ const SellerDashboardPage = () => {
               <span>Discovery Analytics & Demand Insights</span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Real telemetry on how regional buyers discover your products and current category trends
+              Real insights on how local buyers discover your products and current category trends
             </p>
           </div>
           <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold self-start sm:self-auto">
-            Live Platform Telemetry
+            Live Store Activity
           </span>
         </div>
 
@@ -533,7 +533,7 @@ const SellerDashboardPage = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-bold uppercase tracking-wider border border-emerald-200">
-                Phase 4 Predictive Engine
+                Demand & Market Trends
               </span>
               <span className="text-xs font-bold text-slate-500">• 30-Day Outlook</span>
             </div>
@@ -667,7 +667,7 @@ const SellerDashboardPage = () => {
               Institutional & Bulk Procurement
             </h2>
             <p className="text-xs text-indigo-200/80 max-w-xl">
-              Receive direct RFP requirements from corporate buyers, retailers, and event planners with bulk order capacity.
+              Receive direct bulk requirements from corporate buyers, retailers, and event planners with bulk order capacity.
             </p>
           </div>
 
@@ -676,7 +676,7 @@ const SellerDashboardPage = () => {
               to="/b2b"
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-xs transition"
             >
-              Browse Open RFPs
+              Browse Bulk Enquiries
             </Link>
             <Link
               to="/seller/settings"
@@ -719,7 +719,7 @@ const SellerDashboardPage = () => {
             </div>
           ) : (
             <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center text-xs text-indigo-300">
-              No direct institutional RFPs assigned to your workshop yet. Set your B2B production capacity to start receiving matched requirements.
+              No direct bulk enquiries assigned to your shop yet. Set your bulk capacity to start receiving matched requirements.
             </div>
           )}
         </div>

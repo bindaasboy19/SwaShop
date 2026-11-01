@@ -286,6 +286,9 @@ test('Seller as Customer: Seller can send enquiry and save items without logging
 
 test.after(async () => {
   if (server) {
+    if (typeof server.closeAllConnections === 'function') {
+      server.closeAllConnections();
+    }
     await new Promise((resolve) => server.close(resolve));
   }
   await closeDB();
