@@ -1,7 +1,5 @@
 {
-  "version": 2,
-  "framework": "vite",
-  "buildCommand": "npm run build --workspace=client",
+  "buildCommand": "npm run build",
   "outputDirectory": "client/dist",
   "rewrites": [
     {

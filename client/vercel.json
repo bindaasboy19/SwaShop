@@ -1,5 +1,6 @@
 {
-  "version": 2,
+  "framework": "vite",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/(.*)",
