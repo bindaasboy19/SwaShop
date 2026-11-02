@@ -13,12 +13,15 @@ import {
   Sparkles,
   ArrowRight,
   ShieldCheck,
-  Briefcase
+  Briefcase,
+  Navigation,
+  Compass
 } from 'lucide-react';
 import axiosClient from '../../api/axiosClient.js';
 import { useLocation } from '../../context/LocationContext.jsx';
 import ProductCard from '../../marketplace/ProductCard.jsx';
 import SellerCard from '../../marketplace/SellerCard.jsx';
+import ArtisanMapView from '../../marketplace/ArtisanMapView.jsx';
 
 const SELLER_TYPES = [
   { value: '', label: 'All Seller Types' },
@@ -199,29 +202,40 @@ const ExplorePage = () => {
           </p>
         </div>
 
-        {/* View Switcher: Products vs Sellers */}
-        <div className="flex items-center p-1 bg-slate-200/80 rounded-xl self-start sm:self-auto">
+        {/* View Switcher: Products vs Sellers vs Map */}
+        <div className="flex flex-wrap items-center p-1 bg-slate-200/80 rounded-xl self-start sm:self-auto gap-1">
           <button
             onClick={() => setActiveTab('products')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition ${
               activeTab === 'products'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Package className="w-4 h-4" />
+            <Package className="w-4 h-4 text-brand-600" />
             <span>Products ({products.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('sellers')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition ${
               activeTab === 'sellers'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Store className="w-4 h-4" />
-            <span>Sellers & Makers ({sellers.length})</span>
+            <Store className="w-4 h-4 text-amber-600" />
+            <span>Shops & Makers ({sellers.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('map')}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition ${
+              activeTab === 'map'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-300/60'
+            }`}
+          >
+            <Navigation className="w-4 h-4 text-emerald-400" />
+            <span>Live Map Radar ({sellers.length})</span>
           </button>
         </div>
       </div>
@@ -508,6 +522,15 @@ const ExplorePage = () => {
                 </div>
               </div>
             )
+          ) : activeTab === 'map' ? (
+            <ArtisanMapView
+              sellers={sellers}
+              products={products}
+              userCoords={coords}
+              radiusKm={radiusKm}
+              locationLabel={locationLabel}
+              onRadiusChange={(r) => setRadiusKm(r)}
+            />
           ) : (
             sellers.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -11,7 +11,8 @@ import {
   TrendingUp,
   Package,
   Layers,
-  CheckCircle
+  CheckCircle,
+  Navigation
 } from 'lucide-react';
 import axiosClient from '../../api/axiosClient.js';
 import { useLocation } from '../../context/LocationContext.jsx';
@@ -174,6 +175,34 @@ const HomePage = () => {
               </span>
             </Link>
           ))}
+        </div>
+      </section>
+
+      {/* Live Map Radar Hero Card */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950 p-6 sm:p-8 text-white border border-slate-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-xl">
+            <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black uppercase tracking-wider inline-flex items-center gap-1.5 border border-emerald-500/30">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              Live Geolocation Radar
+            </span>
+            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+              Locate Nearby Physical Shops & Artisan Workshops on Map
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Find verified regional makers within walking and driving distance from <strong>{locationLabel}</strong>. Get turn-by-turn GPS, visit the physical counter, and touch before you buy.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              to="/explore?view=map"
+              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs sm:text-sm shadow-lg transition flex items-center gap-2"
+            >
+              <Navigation className="w-4 h-4 text-white" />
+              <span>Open Interactive Live Map</span>
+            </Link>
+          </div>
         </div>
       </section>
 

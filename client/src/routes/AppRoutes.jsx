@@ -182,7 +182,11 @@ const AppRoutes = () => {
       />
       <Route
         path="/seller/ai-studio"
-        element={<Navigate to="/seller/products/new" replace />}
+        element={
+          <ProtectedRoute allowedRoles={['SELLER']}>
+            <SellerAIStudioPage />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/seller/products"

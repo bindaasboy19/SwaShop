@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin,
   Navigation,
@@ -10,13 +10,15 @@ import {
   ShieldCheck,
   CheckCircle2,
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  Layers,
+  Crosshair
 } from 'lucide-react';
 
 /**
  * ShopRouteMap Component
  * Visualizes the physical track from Customer Location to Shop Location.
- * Enables direct turn-by-turn navigation and direct customer-to-shop chat.
+ * Uses interactive Leaflet with route trajectory and direct turn-by-turn navigation.
  */
 const ShopRouteMap = ({
   shop,
@@ -26,18 +28,24 @@ const ShopRouteMap = ({
   productName = null
 }) => {
   const [mapMode, setMapMode] = useState('driving'); // driving | walking
+  const [viewStyle, setViewStyle] = useState('leaflet'); // 'leaflet' or 'google'
+  const leafletContainerRef = useRef(null);
+  const leafletMapRef = useRef(null);
 
   if (!shop) return null;
 
-  // Extract coordinates (GeoJSON [lng, lat])
-  const shopCoords = shop.location?.coordinates;
+  // Extract coordinates (GeoJSON [lng, lat] or coordinates object)
+  const shopCoords = shop.coordinates?.lat && shop.coordinates?.lng
+    ? [Number(shop.coordinates.lng), Number(shop.coordinates.lat)]
+    : shop.location?.coordinates;
+
   const hasShopCoords =
     Array.isArray(shopCoords) &&
     shopCoords.length === 2 &&
     (shopCoords[0] !== 0 || shopCoords[1] !== 0);
 
-  const shopLng = hasShopCoords ? shopCoords[0] : null;
-  const shopLat = hasShopCoords ? shopCoords[1] : null;
+  const shopLng = hasShopCoords ? Number(shopCoords[0]) : null;
+  const shopLat = hasShopCoords ? Number(shopCoords[1]) : null;
 
   const hasCustomerCoords =
     customerCoords &&
@@ -52,7 +60,7 @@ const ShopRouteMap = ({
   const driveMinutes = isValidDistance ? Math.max(2, Math.round((numericDistance / 25) * 60)) : null;
   const walkMinutes = isValidDistance ? Math.max(3, Math.round((numericDistance / 4.5) * 60)) : null;
 
-  // Build Truthful Navigation URL
+  // Build Turn-by-Turn URL
   const destinationQuery = hasShopCoords
     ? `${shopLat},${shopLng}`
     : encodeURIComponent(`${shop.businessName} ${shop.address || ''} ${shop.city || ''} ${shop.pincode || ''}`.trim());
@@ -65,12 +73,117 @@ const ShopRouteMap = ({
     ? `https://www.google.com/maps/dir/?api=1&origin=${originQuery}&destination=${destinationQuery}&travelmode=${mapMode}`
     : `https://www.google.com/maps/dir/?api=1&destination=${destinationQuery}`;
 
-  // Embedded Map URL (using Google Maps Embed or OSM fallback)
+  // Google Maps embed fallback URL
   const embedUrl = hasCustomerCoords && hasShopCoords
     ? `https://maps.google.com/maps?saddr=${customerCoords.lat},${customerCoords.lng}&daddr=${shopLat},${shopLng}&output=embed`
     : hasShopCoords
     ? `https://maps.google.com/maps?q=${shopLat},${shopLng}&output=embed`
     : `https://maps.google.com/maps?q=${destinationQuery}&output=embed`;
+
+  // Initialize & Update Leaflet Route Map
+  useEffect(() => {
+    if (viewStyle !== 'leaflet') return;
+    if (!leafletContainerRef.current) return;
+    const L = window.L;
+    if (!L) return;
+
+    if (!leafletMapRef.current) {
+      const initialLat = shopLat || (customerCoords?.lat || 28.6304);
+      const initialLng = shopLng || (customerCoords?.lng || 77.2177);
+
+      const map = L.map(leafletContainerRef.current, {
+        center: [initialLat, initialLng],
+        zoom: 13,
+        zoomControl: false,
+        attributionControl: false
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+      }).addTo(map);
+
+      leafletMapRef.current = map;
+    }
+
+    const map = leafletMapRef.current;
+    // Clear existing markers/lines
+    map.eachLayer((layer) => {
+      if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+        map.removeLayer(layer);
+      }
+    });
+
+    const bounds = L.latLngBounds();
+
+    // 1. Customer Origin Marker
+    if (hasCustomerCoords) {
+      const userIcon = L.divIcon({
+        className: 'user-origin-pin',
+        html: `
+          <div style="display:flex; flex-direction:column; align-items:center;">
+            <div class="user-gps-beacon"></div>
+            <div style="background:rgba(15,23,42,0.9); color:#fff; font-size:9.5px; font-weight:800; padding:2px 6px; border-radius:9999px; margin-top:3px; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.3);">
+              You
+            </div>
+          </div>
+        `,
+        iconSize: [40, 36],
+        iconAnchor: [20, 11]
+      });
+
+      L.marker([customerCoords.lat, customerCoords.lng], { icon: userIcon }).addTo(map);
+      bounds.extend([customerCoords.lat, customerCoords.lng]);
+    }
+
+    // 2. Shop Destination Marker
+    if (hasShopCoords) {
+      const shopIcon = L.divIcon({
+        className: 'shop-dest-pin',
+        html: `
+          <div style="background:#d97706; border:2.5px solid #fff; color:#fff; padding:5px 9px; border-radius:9999px; display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:800; box-shadow:0 4px 14px rgba(0,0,0,0.35); font-family:sans-serif;">
+            <span>🏪</span>
+            <span style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${shop.businessName}</span>
+          </div>
+        `,
+        iconSize: [140, 32],
+        iconAnchor: [70, 16]
+      });
+
+      L.marker([shopLat, shopLng], { icon: shopIcon }).addTo(map);
+      bounds.extend([shopLat, shopLng]);
+    }
+
+    // 3. Trajectory Polyline connecting Origin to Destination
+    if (hasCustomerCoords && hasShopCoords) {
+      L.polyline(
+        [
+          [customerCoords.lat, customerCoords.lng],
+          [shopLat, shopLng]
+        ],
+        {
+          color: '#f59e0b',
+          weight: 3.5,
+          opacity: 0.85,
+          dashArray: '6, 8',
+          lineCap: 'round'
+        }
+      ).addTo(map);
+    }
+
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+    }
+  }, [shopLat, shopLng, customerCoords?.lat, customerCoords?.lng, viewStyle]);
+
+  // Clean up
+  useEffect(() => {
+    return () => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden space-y-0">
@@ -90,7 +203,7 @@ const ShopRouteMap = ({
         </div>
 
         {/* Mode Selector & Distance Chip */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {isValidDistance && (
             <div className="px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-emerald-400" />
@@ -127,19 +240,34 @@ const ShopRouteMap = ({
         </div>
       </div>
 
-      {/* Interactive Map Embed */}
-      <div className="relative w-full h-64 sm:h-80 bg-slate-100 border-y border-slate-200">
-        <iframe
-          title={`Route track to ${shop.businessName}`}
-          src={embedUrl}
-          className="w-full h-full border-0"
-          loading="lazy"
-          allowFullScreen
-          referrerPolicy="no-referrer-when-downgrade"
-        />
+      {/* Interactive Map Visual */}
+      <div className="relative w-full h-72 sm:h-80 bg-slate-100 border-y border-slate-200">
+        {viewStyle === 'leaflet' && hasShopCoords ? (
+          <div ref={leafletContainerRef} className="w-full h-full" />
+        ) : (
+          <iframe
+            title={`Route track to ${shop.businessName}`}
+            src={embedUrl}
+            className="w-full h-full border-0"
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        )}
 
         {/* Floating Quick Action Overlay */}
-        <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 flex items-center gap-2">
+        <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 flex items-center gap-2 z-20">
+          {hasShopCoords && (
+            <button
+              type="button"
+              onClick={() => setViewStyle(viewStyle === 'leaflet' ? 'google' : 'leaflet')}
+              className="px-3 py-2 rounded-xl bg-white/90 hover:bg-white text-slate-800 font-bold text-xs shadow-md backdrop-blur-md transition flex items-center gap-1.5 border border-slate-200"
+            >
+              <Layers className="w-3.5 h-3.5 text-brand-600" />
+              <span>{viewStyle === 'leaflet' ? 'Satellite View' : 'Interactive Map'}</span>
+            </button>
+          )}
+
           <a
             href={turnByTurnUrl}
             target="_blank"
@@ -169,7 +297,7 @@ const ShopRouteMap = ({
             </h4>
             <p className="text-xs text-slate-500">
               {hasCustomerCoords
-                ? `GPS Coordinates: ${customerCoords.lat.toFixed(4)}, ${customerCoords.lng.toFixed(4)}`
+                ? `GPS Coordinates: ${customerCoords.lat.toFixed(4)}° N, ${customerCoords.lng.toFixed(4)}° E`
                 : 'Using browser device geolocation or default city center'}
             </p>
           </div>

@@ -71,10 +71,30 @@ const LoginPage = () => {
     }
   };
 
-  const handleSelectDemo = (demo) => {
+  const handleSelectDemo = async (demo) => {
     setEmail(demo.email);
     setPassword(demo.password);
     setError('');
+    setIsLoading(true);
+
+    try {
+      const data = await login(demo.email, demo.password);
+      const role = data.user.role;
+
+      if (from) {
+        navigate(from, { replace: true });
+      } else if (role === 'ADMIN') {
+        navigate('/admin', { replace: true });
+      } else if (role === 'SELLER') {
+        navigate('/seller', { replace: true });
+      } else {
+        navigate('/explore', { replace: true });
+      }
+    } catch (err) {
+      setError(err.message || 'Demo login failed. Please ensure the database is seeded.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

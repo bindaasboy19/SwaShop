@@ -137,6 +137,17 @@ const Navbar = () => {
                 Nearby
               </Link>
               <Link
+                to="/explore?view=map"
+                className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 font-bold ${
+                  routerLocation.search.includes('view=map')
+                    ? 'text-emerald-700 bg-emerald-50'
+                    : 'text-slate-700 hover:text-emerald-600'
+                }`}
+              >
+                <Navigation className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Live Map</span>
+              </Link>
+              <Link
                 to="/b2b"
                 className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
                   isActive('/b2b') ? 'text-indigo-600 bg-indigo-50 font-semibold' : 'text-slate-700 hover:text-indigo-600'
@@ -182,6 +193,13 @@ const Navbar = () => {
               {/* Seller Quick Links */}
               {isSeller && (
                 <>
+                  <Link
+                    to="/seller/ai-studio"
+                    className="px-3 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold transition flex items-center gap-1.5 border border-purple-200"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600 animate-pulse" />
+                    <span>AI Studio</span>
+                  </Link>
                   <Link
                     to="/seller/products/new"
                     className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold transition flex items-center gap-1.5 border border-amber-200"

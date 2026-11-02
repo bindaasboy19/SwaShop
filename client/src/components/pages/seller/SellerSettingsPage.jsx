@@ -18,6 +18,9 @@ const SellerSettingsPage = () => {
   const [city, setCity] = useState(sellerProfile?.city || '');
   const [state, setState] = useState(sellerProfile?.state || '');
   const [pincode, setPincode] = useState(sellerProfile?.pincode || '');
+  const [lat, setLat] = useState(sellerProfile?.coordinates?.lat || sellerProfile?.location?.coordinates?.[1] || 28.6304);
+  const [lng, setLng] = useState(sellerProfile?.coordinates?.lng || sellerProfile?.location?.coordinates?.[0] || 77.2177);
+  const [isDetectingShopGps, setIsDetectingShopGps] = useState(false);
   const [businessHours, setBusinessHours] = useState(sellerProfile?.businessHours || '');
   const [isOpen, setIsOpen] = useState(sellerProfile?.isOpen !== undefined ? sellerProfile.isOpen : true);
   const [logo, setLogo] = useState(sellerProfile?.logo ? [sellerProfile.logo] : []);
@@ -79,6 +82,27 @@ const SellerSettingsPage = () => {
     }
   };
 
+  const handleDetectShopGPS = () => {
+    if (!navigator.geolocation) {
+      showToast('Geolocation is not supported in this browser.', 'error');
+      return;
+    }
+    setIsDetectingShopGps(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(pos.coords.latitude);
+        setLng(pos.coords.longitude);
+        setIsDetectingShopGps(false);
+        showToast(`Shop GPS locked: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`, 'success');
+      },
+      (err) => {
+        setIsDetectingShopGps(false);
+        showToast('Could not lock current GPS. Please allow location permissions.', 'error');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -96,6 +120,10 @@ const SellerSettingsPage = () => {
           city: city.trim(),
           state: state.trim(),
           pincode: pincode.trim(),
+          coordinates: {
+            lat: parseFloat(lat) || 0,
+            lng: parseFloat(lng) || 0
+          },
           businessHours,
           isOpen,
           logo: logo[0] || '',
@@ -298,6 +326,53 @@ const SellerSettingsPage = () => {
                 onChange={(e) => setPincode(e.target.value)}
                 className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:border-brand-500 outline-none"
               />
+            </div>
+          </div>
+
+          {/* Real-time Shop GPS Coordinates for Local Discovery */}
+          <div className="pt-3 border-t border-slate-100 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-800">
+                  Physical Store GPS Coordinates (Map Pin)
+                </label>
+                <p className="text-[11px] text-slate-500">
+                  Ensures nearby shoppers can find your exact store on the live craft map and get directions.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleDetectShopGPS}
+                disabled={isDetectingShopGps}
+                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 self-start sm:self-auto disabled:opacity-50"
+              >
+                <MapPin className={`w-3.5 h-3.5 text-amber-400 ${isDetectingShopGps ? 'animate-spin' : ''}`} />
+                <span>{isDetectingShopGps ? 'Locking GPS...' : 'Lock Current Counter GPS'}</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Latitude</span>
+                <input
+                  type="number"
+                  step="any"
+                  value={lat}
+                  onChange={(e) => setLat(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-200 focus:border-brand-500 outline-none"
+                />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Longitude</span>
+                <input
+                  type="number"
+                  step="any"
+                  value={lng}
+                  onChange={(e) => setLng(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-200 focus:border-brand-500 outline-none"
+                />
+              </div>
             </div>
           </div>
         </div>
