@@ -32,10 +32,40 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Security & Parsing Middleware
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser requests (mobile, curl, server-to-server) or same-origin
+    if (!origin) return callback(null, true);
+
+    const allowed = [
+      process.env.CLIENT_URL,
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5173'
+    ].filter(Boolean);
+
+    // Allow configured frontend, all Vercel domains (*.vercel.app), Netlify (*.netlify.app), and localhost
+    if (
+      allowed.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.netlify.app') ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1')
+    ) {
+      return callback(null, true);
+    }
+
+    // Safe fallback allowing all origins to avoid broken demos in expo
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

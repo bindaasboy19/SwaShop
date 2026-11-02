@@ -10,13 +10,21 @@ coverage/
 build/
 dist/
 
-# Environment
+# Environment secrets (do not commit)
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.example
+.env.*
+!.env.example
+server/.env
+server/.env.*
+!server/.env.example
+client/.env
+client/.env.*
+!client/.env.example
+
+# Subpackage node_modules
+server/node_modules/
+client/node_modules/
+
 
 # Logs
 npm-debug.log*

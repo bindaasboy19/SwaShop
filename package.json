@@ -21,6 +21,12 @@
   "devDependencies": {
     "concurrently": "^9.1.2"
   },
+  "overrides": {
+    "express": {
+      "qs": "6.16.2"
+    },
+    "qs": "6.16.2"
+  },
   "keywords": [
     "swashop",
     "marketplace",

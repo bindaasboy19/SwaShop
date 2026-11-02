@@ -15,7 +15,8 @@ import {
   ShoppingBag,
   PlusCircle,
   Repeat,
-  Briefcase
+  Briefcase,
+  Navigation
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useLocation } from '../../context/LocationContext.jsx';
