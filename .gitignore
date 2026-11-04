@@ -36,6 +36,10 @@ yarn-error.log*
 server/uploads/*
 !server/uploads/.gitkeep
 
+# Local Mongo Data
+.mongo-data/
+server/.mongo-data/
+
 # System & IDE
 .DS_Store
 .vscode/
